@@ -20,7 +20,7 @@ GitHub Pages（`main` 分支根目录）。访问地址：https://yiipu.github.i
 
 ## 数据流
 
-1. **投稿**：用户点「投稿到社区」→ 跳转 GitHub Issue Form → 提交 issue → `submit.yml` 校验通过后为该词创建一条 Discussion（分类 `Announcements`），把 `{text, discussion: <number>}` 写入 `community.json` 并 commit
+1. **投稿**：用户点「向社区投稿」→ 跳转 GitHub Issue Form → 提交 issue → `submit.yml` 校验通过后为该词创建一条 Discussion（分类 `Announcements`），把 `{text, discussion: <number>}` 写入 `community.json` 并 commit
 2. **展示**：前端 `fetch('community.json')`（同目录静态文件），社区词以 20% 概率混合展示
 3. **投票**：展示社区词时懒加载 giscus，`data-mapping="number"` `data-term="<discussion>"` 精确指向对应 Discussion，用户登陆 GitHub 后点 reaction（👍/👎）
 4. **衰减**：`fade-out.yml` 每日读取 reaction 计数，套用与旧版 `run_fade_out()` 相同的 `差评 > 好评×1.5` 逻辑，移除词条
@@ -44,10 +44,6 @@ GitHub Pages（`main` 分支根目录）。访问地址：https://yiipu.github.i
 
 - **`paw_check`** 语义审核（原 stub）尚未搬进 `submit.yml`，当前只有硬校验（长度/类别/模式/查重），待接 programasweights.com PAW
 - giscus 目前只做了基础配置（reactions-enabled + 明暗主题跟随），细节样式待后续调整
-
-## 已废弃（改造前的架构，供参考）
-
-原 Flask + SQLite 后端（`backend/app.py`、`backend/db.py`）已移除。实时 👍/👎 投票、`POST /api/feedback` 改为登陆 GitHub 后的 Discussion reaction；`POST /api/submit` 改为 Issue Form + Action；`POST /api/fade-out` 改为定时 Action。
 
 ## 风格
 

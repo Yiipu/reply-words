@@ -72,6 +72,7 @@
   /* Header */
   .header {
     text-align: center;
+    position: relative;
   }
   .header h1 {
     font-size: 22px;
@@ -207,6 +208,7 @@
   }
   .word-label-leader { background: var(--leader-bg); }
   .word-label-colleague { background: var(--colleague-bg); }
+  .word-label-community { background: #8e44ad; font-size: 10px; }
   .word-display {
     font-size: 26px;
     font-weight: 600;
@@ -255,25 +257,33 @@
     flex-shrink: 0;
   }
 
-  /* Edit button */
-  .edit-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
+  /* Settings gear button */
+  .btn-settings {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 13px;
-    font-family: var(--font);
     cursor: pointer;
     border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
     transition: color 0.15s ease, background 0.15s ease;
-    width: 100%;
+    -webkit-tap-highlight-color: transparent;
   }
-  .edit-toggle:hover {
+  .btn-settings:hover {
     color: var(--text);
     background: rgba(128,128,128,0.1);
+  }
+  .btn-settings svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
   }
 
   /* Modal */
@@ -311,10 +321,12 @@
     align-items: center;
     justify-content: space-between;
     padding: 18px 20px 0;
+    gap: 12px;
   }
   .modal-header h2 {
     font-size: 17px;
     font-weight: 600;
+    flex-shrink: 0;
   }
   .btn-close {
     width: 32px;
@@ -338,27 +350,122 @@
     padding: 16px 20px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 18px;
   }
 
-  /* Tabs */
-  .modal-tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 1px solid var(--border);
+  /* Page-level tabs */
+  .modal-page-tabs {
+    margin: 0 20px;
   }
-  .modal-tab {
-    flex: 1;
-    padding: 8px 0;
+  .modal-page-tabs .modal-tab {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  /* Edit section */
+  .edit-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .edit-section + .edit-section {
+    margin-top: 16px;
+  }
+  .edit-section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .community-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .edit-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .link-submit {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+  .link-submit:hover {
+    color: var(--text);
+    text-decoration: underline;
+  }
+
+  /* Tabs toolbar */
+  .modal-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .modal-toolbar .btn-reset {
+    margin-left: auto;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    flex-shrink: 0;
+  }
+  .modal-toolbar .btn-reset:hover {
+    color: #e74c3c;
+    border-color: #e74c3c;
+  }
+  .modal-mode-segment {
+    display: flex;
+    background: var(--copy-bg);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 0;
+    flex-shrink: 0;
+  }
+  .modal-mode-btn {
+    padding: 6px 12px;
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     font-family: var(--font);
     cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    border-radius: 6px;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    text-align: center;
+  }
+  .modal-mode-btn.active {
+    background: var(--card-bg);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .modal-tabs {
+    display: flex;
+    background: var(--copy-bg);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 0;
+  }
+  .modal-tab {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    border-radius: 6px;
+    border-bottom: none;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -366,8 +473,10 @@
     color: var(--text);
   }
   .modal-tab.active {
-    color: var(--mode-accent);
-    border-bottom-color: var(--mode-accent);
+    color: var(--text);
+    background: var(--card-bg);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    border-bottom-color: transparent;
     font-weight: 600;
   }
 
@@ -403,13 +512,6 @@
   }
 
   /* Mix rate */
-  .mix-rate-group label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 6px;
-    color: var(--text);
-  }
   .mix-rate-row {
     display: flex;
     align-items: center;
@@ -443,7 +545,6 @@
   .mix-rate-hint {
     font-size: 11px;
     color: var(--text-secondary);
-    margin-top: 3px;
   }
 
   /* Footer */
@@ -467,45 +568,25 @@
   }
   .btn-save:hover { background: #2980b9; }
   .btn-save:active { transform: scale(0.98); }
-  .modal-footer-secondary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .btn-reset {
-    padding: 6px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-family: var(--font);
-    cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
-  }
-  .btn-reset:hover {
-    color: #e74c3c;
-    border-color: #e74c3c;
-  }
-  .link-submit {
-    font-size: 12px;
-    color: var(--text-secondary);
-    text-decoration: none;
-  }
-  .link-submit:hover {
-    color: var(--text);
-    text-decoration: underline;
-  }
 
-  /* Community entry */
-  .word-label-community {
-    background: #8e44ad;
-    font-size: 10px;
-  }
-  .community-vote {
+  /* Community vote block */
+  .community-vote-block {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
   }
-  .community-vote iframe {
+  .community-vote-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+  .community-vote-container {
+    width: 100%;
+    min-height: 48px;
+  }
+  .community-vote-container iframe {
     width: 100% !important;
   }
 
@@ -550,6 +631,9 @@
   <div class="header">
     <h1><span class="emoji" id="headerEmoji">👌</span><span class="brand" id="headerBrand">OK</span><span class="cn">词库</span></h1>
     <p id="headerSub">好的好的，收到收到</p>
+    <button class="btn-settings" onclick="dialogManager.open()" title="设置">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </div>
 
   <div class="mode-segment">
@@ -566,44 +650,63 @@
     <button class="btn-category btn-colleague" onclick="pickWord('colleague', event)">对同事</button>
   </div>
 
-  <button class="edit-toggle" onclick="dialogManager.open()">编辑词库</button>
+  <div class="community-vote-block" id="communityVoteBlock" style="display:none">
+    <div class="community-vote-hint">喜欢这个词吗？点 👍 或 👎 来投票</div>
+    <div class="community-vote-container" id="communityVoteContainer"></div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="modalOverlay" style="display:none" onmousedown="if(event.target===this)dialogManager.close()">
   <div class="modal">
     <div class="modal-header">
-      <h2>编辑词库</h2>
+      <h2>设置</h2>
       <button class="btn-close" onclick="dialogManager.close()">✕</button>
     </div>
+    <div class="modal-tabs modal-page-tabs">
+      <button class="modal-tab active" id="pageLocal" onclick="dialogManager.switchPage('local')">📝 本地词库</button>
+      <button class="modal-tab" id="pageCommunity" onclick="dialogManager.switchPage('community')">🌐 社区词库</button>
+    </div>
     <div class="modal-body">
-      <div class="modal-tabs">
-        <button class="modal-tab active" id="tabLeader" onclick="dialogManager.switchTab('leader')">👔 对领导</button>
-        <button class="modal-tab" id="tabColleague" onclick="dialogManager.switchTab('colleague')">👥 对同事</button>
-      </div>
-      <div class="tab-panel" id="leaderPanel">
-        <textarea id="leaderWords" placeholder="好的&#10;收到&#10;明白" oninput="dialogManager.updateWordCount('leader')"></textarea>
-        <div class="word-count" id="leaderCount">共 0 个词</div>
-      </div>
-      <div class="tab-panel" id="colleaguePanel" style="display:none">
-        <textarea id="colleagueWords" placeholder="好的&#10;OK&#10;收到" oninput="dialogManager.updateWordCount('colleague')"></textarea>
-        <div class="word-count" id="colleagueCount">共 0 个词</div>
-      </div>
-      <div class="edit-group mix-rate-group">
-        <label>社区词库混入比例</label>
-        <div class="mix-rate-row">
-          <input type="range" id="mixRateSlider" min="0" max="100" step="5" value="20" oninput="dialogManager.onMixRateSlider(this.value)">
-          <input type="number" id="mixRateInput" min="0" max="100" value="20" oninput="dialogManager.onMixRateInput(this.value)">
-          <span>%</span>
+      <div class="edit-page" id="pageLocalPanel">
+        <div class="modal-toolbar">
+          <div class="modal-mode-segment">
+            <button class="modal-mode-btn active" id="modalOkBtn" onclick="dialogManager.switchDialogMode('ok')">👌 OK</button>
+            <button class="modal-mode-btn" id="modalNoBtn" onclick="dialogManager.switchDialogMode('no')">😈 NO</button>
+          </div>
+          <div class="modal-tabs">
+            <button class="modal-tab active" id="tabLeader" onclick="dialogManager.switchTab('leader')">👔 对领导</button>
+            <button class="modal-tab" id="tabColleague" onclick="dialogManager.switchTab('colleague')">👥 对同事</button>
+          </div>
+          <button class="btn-reset" onclick="dialogManager.reset()">恢复默认</button>
         </div>
-        <div class="mix-rate-hint">随机展示社区词库的比例，设为 0 则仅使用本地词库</div>
+        <div class="tab-panel" id="leaderPanel">
+          <textarea id="leaderWords" placeholder="好的&#10;收到&#10;明白" oninput="dialogManager.updateWordCount('leader')"></textarea>
+          <div class="word-count" id="leaderCount">共 0 个词</div>
+        </div>
+        <div class="tab-panel" id="colleaguePanel" style="display:none">
+          <textarea id="colleagueWords" placeholder="好的&#10;OK&#10;收到" oninput="dialogManager.updateWordCount('colleague')"></textarea>
+          <div class="word-count" id="colleagueCount">共 0 个词</div>
+        </div>
+      </div>
+      <div class="edit-page" id="pageCommunityPanel" style="display:none">
+        <div class="edit-section">
+          <label class="edit-section-label">混入比例</label>
+          <div class="mix-rate-row">
+            <input type="range" id="mixRateSlider" min="0" max="100" step="5" value="20" oninput="dialogManager.onMixRateSlider(this.value)">
+            <input type="number" id="mixRateInput" min="0" max="100" value="20" oninput="dialogManager.onMixRateInput(this.value)">
+            <span>%</span>
+          </div>
+          <div class="mix-rate-hint">随机展示社区词库的比例，设为 0 则仅使用本地词库</div>
+        </div>
+        <div class="edit-section">
+          <label class="edit-section-label">投稿新词</label>
+          <p class="community-desc">把你觉得好的回复词提交到社区词库，审核通过后所有人可见。</p>
+          <a class="link-submit" href="https://github.com/Yiipu/reply-words/issues/new?template=submit-word.yml" target="_blank" rel="noopener">向社区投稿 →</a>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn-save" onclick="dialogManager.save()">保存</button>
-      <div class="modal-footer-secondary">
-        <button class="btn-reset" onclick="dialogManager.reset()">恢复默认词库</button>
-        <a class="link-submit" href="https://github.com/Yiipu/reply-words/issues/new?template=submit-word.yml" target="_blank" rel="noopener">向社区投稿 →</a>
-      </div>
     </div>
   </div>
 </div>
@@ -712,14 +815,20 @@ function displayCommunityWord(discussion, word, category) {
   card.innerHTML = `
     <div class="word-label word-label-community">来自社区 · ${category === 'leader' ? '对领导' : '对同事'}</div>
     <div class="word-display">${escapeHtml(word)}</div>
-    <div class="community-vote" id="communityVote"></div>
+    <button class="btn-copy" onclick="copyWord(event)" data-word="${escapeAttr(word)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      复制
+    </button>
   `;
   mountGiscusVote(discussion);
 }
 
 function mountGiscusVote(discussion) {
-  const container = document.getElementById('communityVote');
-  if (!container) return;
+  const block = document.getElementById('communityVoteBlock');
+  const container = document.getElementById('communityVoteContainer');
+  if (!block || !container) return;
+  block.style.display = '';
+  container.innerHTML = '';
   const script = document.createElement('script');
   script.src = 'https://giscus.app/client.js';
   script.async = true;
@@ -732,6 +841,7 @@ function mountGiscusVote(discussion) {
   script.setAttribute('data-term', String(discussion));
   script.setAttribute('data-reactions-enabled', '1');
   script.setAttribute('data-input-position', 'top');
+  script.setAttribute('data-lang', 'zh-CN');
   script.setAttribute('data-theme', document.body.classList.contains('no-mode') ? 'dark' : 'light');
   container.appendChild(script);
 }
@@ -776,6 +886,7 @@ function setMode(newMode) {
   const card = document.getElementById('wordCard');
   card.classList.remove('has-word');
   card.innerHTML = '<div class="word-placeholder">👇 点击下方按钮</div>';
+  document.getElementById('communityVoteBlock').style.display = 'none';
 }
 
 function applyMode() {
@@ -809,6 +920,7 @@ function pickRandom(list, history) {
 function displayWord(word, category) {
   const card = document.getElementById('wordCard');
   card.classList.add('has-word');
+  document.getElementById('communityVoteBlock').style.display = 'none';
   card.innerHTML = `
     <div class="word-label word-label-${category}">${category === 'leader' ? '对领导' : '对同事'}</div>
     <div class="word-display">${escapeHtml(word)}</div>
@@ -853,6 +965,7 @@ function pickWord(category, event) {
       // Community selected but not available — show appropriate message
       const card = document.getElementById('wordCard');
       card.classList.add('has-word');
+      document.getElementById('communityVoteBlock').style.display = 'none';
       const label = category === 'leader' ? '对领导' : '对同事';
       let msg;
       if (communityState === 'loading') {
@@ -942,11 +1055,24 @@ function showToast(message) {
 // ── Dialog Manager ──
 const dialogManager = {
   tab: 'leader',
+  dialogMode: 'ok',
+  page: 'local',
+  // Cached edits for both modes (so switching within dialog preserves unsaved changes)
+  cache: { ok: { leader: '', colleague: '' }, no: { leader: '', colleague: '' } },
 
   open() {
-    this.populate();
+    this.dialogMode = mode;
+    this.cache.ok.leader = okLeaderWords.join('\n');
+    this.cache.ok.colleague = okColleagueWords.join('\n');
+    this.cache.no.leader = noLeaderWords.join('\n');
+    this.cache.no.colleague = noColleagueWords.join('\n');
+    const rate = Math.round(communityMixRate * 100);
+    document.getElementById('mixRateSlider').value = rate;
+    document.getElementById('mixRateInput').value = rate;
     document.getElementById('modalOverlay').style.display = 'flex';
+    this.switchPage('local');
     this.switchTab('leader');
+    this.applyDialogMode();
   },
 
   close() {
@@ -961,17 +1087,29 @@ const dialogManager = {
     document.getElementById('colleaguePanel').style.display = tab === 'colleague' ? '' : 'none';
   },
 
-  populate() {
-    if (mode === 'ok') {
-      document.getElementById('leaderWords').value = okLeaderWords.join('\n');
-      document.getElementById('colleagueWords').value = okColleagueWords.join('\n');
-    } else {
-      document.getElementById('leaderWords').value = noLeaderWords.join('\n');
-      document.getElementById('colleagueWords').value = noColleagueWords.join('\n');
-    }
-    const rate = Math.round(communityMixRate * 100);
-    document.getElementById('mixRateSlider').value = rate;
-    document.getElementById('mixRateInput').value = rate;
+  switchPage(page) {
+    this.page = page;
+    document.getElementById('pageLocal').classList.toggle('active', page === 'local');
+    document.getElementById('pageCommunity').classList.toggle('active', page === 'community');
+    document.getElementById('pageLocalPanel').style.display = page === 'local' ? '' : 'none';
+    document.getElementById('pageCommunityPanel').style.display = page === 'community' ? '' : 'none';
+  },
+
+  switchDialogMode(newMode) {
+    if (this.dialogMode === newMode) return;
+    // Save current textarea values to cache
+    this.cache[this.dialogMode].leader = document.getElementById('leaderWords').value;
+    this.cache[this.dialogMode].colleague = document.getElementById('colleagueWords').value;
+    this.dialogMode = newMode;
+    this.applyDialogMode();
+  },
+
+  applyDialogMode() {
+    const isNo = this.dialogMode === 'no';
+    document.getElementById('modalOkBtn').classList.toggle('active', !isNo);
+    document.getElementById('modalNoBtn').classList.toggle('active', isNo);
+    document.getElementById('leaderWords').value = this.cache[this.dialogMode].leader;
+    document.getElementById('colleagueWords').value = this.cache[this.dialogMode].colleague;
     this.updateWordCount('leader');
     this.updateWordCount('colleague');
   },
@@ -983,25 +1121,24 @@ const dialogManager = {
   },
 
   save() {
-    const rawLeader = document.getElementById('leaderWords').value;
-    const rawColleague = document.getElementById('colleagueWords').value;
+    // Save current textarea values to cache first
+    this.cache[this.dialogMode].leader = document.getElementById('leaderWords').value;
+    this.cache[this.dialogMode].colleague = document.getElementById('colleagueWords').value;
 
-    const leaderArr = rawLeader.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-    const colleagueArr = rawColleague.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    const okLeaderArr = this.cache.ok.leader.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    const okColleagueArr = this.cache.ok.colleague.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    const noLeaderArr = this.cache.no.leader.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    const noColleagueArr = this.cache.no.colleague.split('\n').map(s => s.trim()).filter(s => s.length > 0);
 
-    if (mode === 'ok') {
-      okLeaderWords = leaderArr.length > 0 ? leaderArr : [...DEFAULT_OK_LEADER];
-      okColleagueWords = colleagueArr.length > 0 ? colleagueArr : [...DEFAULT_OK_COLLEAGUE];
-    } else {
-      noLeaderWords = leaderArr.length > 0 ? leaderArr : [...DEFAULT_NO_LEADER];
-      noColleagueWords = colleagueArr.length > 0 ? colleagueArr : [...DEFAULT_NO_COLLEAGUE];
-    }
+    okLeaderWords = okLeaderArr.length > 0 ? okLeaderArr : [...DEFAULT_OK_LEADER];
+    okColleagueWords = okColleagueArr.length > 0 ? okColleagueArr : [...DEFAULT_OK_COLLEAGUE];
+    noLeaderWords = noLeaderArr.length > 0 ? noLeaderArr : [...DEFAULT_NO_LEADER];
+    noColleagueWords = noColleagueArr.length > 0 ? noColleagueArr : [...DEFAULT_NO_COLLEAGUE];
 
     const rateVal = parseInt(document.getElementById('mixRateInput').value, 10);
     if (!isNaN(rateVal)) {
       communityMixRate = Math.max(0, Math.min(100, rateVal)) / 100;
     }
-    // Reset input to actual stored value (handles empty/NaN input)
     document.getElementById('mixRateInput').value = Math.round(communityMixRate * 100);
     document.getElementById('mixRateSlider').value = Math.round(communityMixRate * 100);
 
@@ -1011,18 +1148,17 @@ const dialogManager = {
   },
 
   reset() {
-    if (!confirm('确定恢复当前模式（' + (mode === 'ok' ? 'OK' : '😈') + '）的默认词库？编辑的内容将被覆盖。')) return;
+    const modeLabel = this.dialogMode === 'ok' ? 'OK' : '😈';
+    if (!confirm('确定恢复' + modeLabel + '模式的默认词库？编辑的内容将被覆盖。')) return;
 
-    if (mode === 'ok') {
-      okLeaderWords = [...DEFAULT_OK_LEADER];
-      okColleagueWords = [...DEFAULT_OK_COLLEAGUE];
+    if (this.dialogMode === 'ok') {
+      this.cache.ok.leader = DEFAULT_OK_LEADER.join('\n');
+      this.cache.ok.colleague = DEFAULT_OK_COLLEAGUE.join('\n');
     } else {
-      noLeaderWords = [...DEFAULT_NO_LEADER];
-      noColleagueWords = [...DEFAULT_NO_COLLEAGUE];
+      this.cache.no.leader = DEFAULT_NO_LEADER.join('\n');
+      this.cache.no.colleague = DEFAULT_NO_COLLEAGUE.join('\n');
     }
-
-    persistAll();
-    this.populate();
+    this.applyDialogMode();
     showToast('✓ 已恢复默认词库');
   },
 
