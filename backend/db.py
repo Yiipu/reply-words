@@ -83,20 +83,16 @@ def rebuild_community_json():
 
 def run_fade_out():
     conn = get_db()
-    rows = conn.execute("""
-        SELECT w.id,
-               SUM(CASE WHEN f.vote=1 THEN 1 ELSE 0 END) as pos,
-               SUM(CASE WHEN f.vote=-1 THEN 1 ELSE 0 END) as neg
-        FROM words w
-        LEFT JOIN feedback f ON f.word_id = w.id
-        WHERE w.active = 1
-        GROUP BY w.id
-        HAVING neg > pos * 1.5
-    """).fetchall()
-    faded = 0
-    for row in rows:
-        conn.execute("UPDATE words SET active=0 WHERE id=?", (row["id"],))
-        faded += 1
+    cursor = conn.execute("""
+        UPDATE words SET active=0 WHERE id IN (
+            SELECT w.id FROM words w
+            LEFT JOIN feedback f ON f.word_id = w.id
+            WHERE w.active = 1
+            GROUP BY w.id
+            HAVING SUM(CASE WHEN f.vote=-1 THEN 1 ELSE 0 END) > SUM(CASE WHEN f.vote=1 THEN 1 ELSE 0 END) * 1.5
+        )
+    """)
+    faded = cursor.rowcount
     conn.commit()
     conn.close()
     if faded > 0:
