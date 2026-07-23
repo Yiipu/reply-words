@@ -2,7 +2,7 @@ name: 投稿处理
 
 on:
   issues:
-    types: [opened]
+    types: [opened, labeled]
 
 permissions:
   contents: write
@@ -11,7 +11,9 @@ permissions:
 
 jobs:
   submit:
-    if: contains(github.event.issue.labels.*.name, 'word-submission')
+    if: |
+      contains(github.event.issue.labels.*.name, 'word-submission') &&
+      github.event.issue.state == 'open'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
