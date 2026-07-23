@@ -1,4 +1,15 @@
 {
-  "ok": { "leader": [], "colleague": [] },
-  "no": { "leader": [], "colleague": [] }
+  "ok": {
+    "leader": [],
+    "colleague": []
+  },
+  "no": {
+    "leader": [],
+    "colleague": [
+      {
+        "text": "你有事吗",
+        "discussion": 2
+      }
+    ]
+  }
 }
