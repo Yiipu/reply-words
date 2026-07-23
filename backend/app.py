@@ -139,41 +139,6 @@ def feedback():
     return jsonify({"status": "recorded"}), 200
 
 
-@app.route('/api/feedback-by-text', methods=['POST'])
-def feedback_by_text():
-    """Record feedback by word text (for client convenience)."""
-    body = request.get_json(silent=True)
-    if not body:
-        return jsonify({"error": "请提供JSON格式的反馈"}), 400
-
-    text = (body.get('text') or '').strip()
-    category = body.get('category', '')
-    vote = body.get('vote')
-
-    if not text:
-        return jsonify({"error": "内容不能为空"}), 400
-    if category not in ('leader', 'colleague'):
-        return jsonify({"error": "类别无效"}), 400
-    if vote not in (1, -1):
-        return jsonify({"error": "vote 必须为 1 或 -1"}), 400
-
-    # Look up word by text + category (most recent active match)
-    import sqlite3
-    conn = sqlite3.connect(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'community.db'))
-    conn.row_factory = sqlite3.Row
-    row = conn.execute(
-        "SELECT id FROM words WHERE text=? AND category=? AND active=1 ORDER BY id DESC LIMIT 1",
-        (text, category)
-    ).fetchone()
-    conn.close()
-
-    if not row:
-        return jsonify({"error": "词条不存在"}), 404
-
-    add_feedback(row["id"], vote)
-    return jsonify({"status": "recorded"}), 200
-
-
 @app.route('/api/fade-out', methods=['POST'])
 def trigger_fade_out():
     """Admin trigger for fade-out (also runs periodically)."""

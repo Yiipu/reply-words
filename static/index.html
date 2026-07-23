@@ -612,8 +612,8 @@ async function fetchCommunityWords() {
     communityWordMap = {};
     for (const mode of ['ok', 'no']) {
       for (const cat of ['leader', 'colleague']) {
-        for (const text of data[mode][cat]) {
-          communityWordMap[text] = { category: cat, mode };
+        for (const item of data[mode][cat]) {
+          communityWordMap[item.text] = { id: item.id, category: cat, mode };
         }
       }
     }
@@ -622,41 +622,37 @@ async function fetchCommunityWords() {
   }
 }
 
-function displayCommunityWord(word, category) {
+function displayCommunityWord(id, word, category) {
   const card = document.getElementById('wordCard');
   card.classList.add('has-word');
   card.innerHTML = `
     <div class="word-label word-label-community">来自社区 · ${category === 'leader' ? '对领导' : '对同事'}</div>
     <div class="word-display">${escapeHtml(word)}</div>
     <div class="community-feedback" id="communityFeedback">
-      <button class="btn-feedback" onclick="submitFeedback(event, '${escapeAttr(word)}', '${category}', 1)" title="有用">
+      <button class="btn-feedback" onclick="submitFeedback(event, ${id}, 1)" title="有用">
         👍
       </button>
-      <button class="btn-feedback" onclick="submitFeedback(event, '${escapeAttr(word)}', '${category}', -1)" title="没用">
+      <button class="btn-feedback" onclick="submitFeedback(event, ${id}, -1)" title="没用">
         👎
       </button>
     </div>
   `;
 }
 
-async function submitFeedback(event, word, category, vote) {
+async function submitFeedback(event, wordId, vote) {
   event.preventDefault();
   const btn = event.currentTarget;
-  // Prevent double-vote
   const container = document.getElementById('communityFeedback');
   if (!container) return;
   const buttons = container.querySelectorAll('.btn-feedback');
   buttons.forEach(b => b.classList.add('voted'));
-  // Highlight the chosen one
   btn.classList.add(vote === 1 ? 'voted-thumb' : 'voted-down');
 
   try {
-    // Look up word_id — we need it from the server
-    // For now, we send text and let backend resolve (or we store ids in communityWordMap)
-    const resp = await fetch(API_BASE + '/api/feedback-by-text', {
+    const resp = await fetch(API_BASE + '/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: word, category, vote })
+      body: JSON.stringify({ word_id: wordId, vote })
     });
     if (resp.ok) {
       showToast('✓ 反馈已记录');
@@ -758,19 +754,20 @@ function pickWord(category, event) {
   const useCommunity = commList && commList.length > 0 && Math.random() < COMMUNITY_MIX_RATE;
 
   if (useCommunity) {
-    // Avoid recent 5 for community too
     const history = category === 'leader' ? leaderHistory : colleagueHistory;
-    const word = pickRandom(commList, history);
+    const available = commList.filter(item => !history.includes(item.text));
+    const pool = available.length > 0 ? available : commList;
+    const item = pool[Math.floor(Math.random() * pool.length)];
     if (category === 'leader') {
-      leaderHistory.push(word);
+      leaderHistory.push(item.text);
       if (leaderHistory.length > 5) leaderHistory.shift();
     } else {
-      colleagueHistory.push(word);
+      colleagueHistory.push(item.text);
       if (colleagueHistory.length > 5) colleagueHistory.shift();
     }
-    displayCommunityWord(word, category);
+    displayCommunityWord(item.id, item.text, category);
     setTimeout(() => {
-      copyToClipboard(word).then(success => {
+      copyToClipboard(item.text).then(success => {
         if (success) showToast('✓ 已复制到剪贴板');
       });
     }, 100);

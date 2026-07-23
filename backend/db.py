@@ -68,12 +68,12 @@ def word_exists(text, category, mode):
 def get_community_words():
     conn = get_db()
     rows = conn.execute(
-        "SELECT text, category, mode FROM words WHERE active=1 ORDER BY id"
+        "SELECT id, text, category, mode FROM words WHERE active=1 ORDER BY id"
     ).fetchall()
     conn.close()
     result = {"ok": {"leader": [], "colleague": []}, "no": {"leader": [], "colleague": []}}
     for row in rows:
-        result[row["mode"]][row["category"]].append(row["text"])
+        result[row["mode"]][row["category"]].append({"id": row["id"], "text": row["text"]})
     return result
 
 def rebuild_community_json():

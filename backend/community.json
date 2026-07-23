@@ -1,10 +1,7 @@
 {
   "ok": {
     "leader": [],
-    "colleague": [
-      "测试社区词",
-      "好词保留"
-    ]
+    "colleague": []
   },
   "no": {
     "leader": [],
