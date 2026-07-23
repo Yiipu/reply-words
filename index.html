@@ -297,7 +297,7 @@
     border-radius: var(--radius);
     box-shadow: 0 8px 30px rgba(0,0,0,0.12);
     width: 100%;
-    max-width: 400px;
+    max-width: 560px;
     max-height: 80vh;
     overflow-y: auto;
     animation: modalIn 0.25s ease;
@@ -349,7 +349,7 @@
   }
   .modal-body .edit-group textarea {
     width: 100%;
-    height: 120px;
+    height: 160px;
     padding: 10px 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -402,6 +402,50 @@
     text-underline-offset: 2px;
   }
   .btn-reset:hover { color: #e74c3c; }
+
+  /* Mix rate control */
+  .mix-rate-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .mix-rate-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .mix-rate-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--mode-accent);
+    height: 6px;
+  }
+  .mix-rate-row input[type="number"] {
+    width: 56px;
+    padding: 5px 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: var(--font);
+    text-align: center;
+    color: var(--text);
+    background: #fafbfc;
+  }
+  body.no-mode .mix-rate-row input[type="number"] {
+    background: #2a2a2a;
+    color: #ede4d3;
+  }
+  .mix-rate-row input[type="number"]:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+  }
+  .mix-rate-hint {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+  }
 
   /* Community entry */
   .word-label-community {
@@ -499,6 +543,15 @@
         <label>对同事（一行一词）</label>
         <textarea id="colleagueWords" placeholder="好的&#10;OK&#10;收到"></textarea>
       </div>
+      <div class="edit-group mix-rate-group">
+        <label>社区词库混入比例</label>
+        <div class="mix-rate-row">
+          <input type="range" id="mixRateSlider" min="0" max="100" step="5" value="20" oninput="onMixRateSlider(this.value)">
+          <input type="number" id="mixRateInput" min="0" max="100" value="20" oninput="onMixRateInput(this.value)">
+          <span>%</span>
+        </div>
+        <div class="mix-rate-hint">随机展示社区词库的比例，设为 0 则仅使用本地词库</div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-save" onclick="saveWords()">保存</button>
@@ -589,15 +642,20 @@ const GISCUS_REPO_ID = 'R_kgDOTg3sHQ';
 const GISCUS_CATEGORY = 'Announcements';
 const GISCUS_CATEGORY_ID = 'DIC_kwDOTg3sHc4DBxyQ';
 let communityWords = { ok: { leader: [], colleague: [] }, no: { leader: [], colleague: [] } };
-const COMMUNITY_MIX_RATE = 0.2;  // 20% chance to show community word
+let communityMixRate = 0.2;  // 20% chance to show community word (configurable in modal)
+let communityState = 'loading';  // 'loading' | 'loaded' | 'failed'
 
 async function fetchCommunityWords() {
   try {
     const resp = await fetch(COMMUNITY_JSON, { cache: 'no-cache' });
-    if (!resp.ok) return;
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
     communityWords = await resp.json();
+    communityState = 'loaded';
   } catch (e) {
-    // Offline — keep existing community words, no toast
+    communityState = 'failed';
+    if (communityMixRate > 0) {
+      showToast('⚠ 社区词库加载失败，当前混入比例 ' + Math.round(communityMixRate * 100) + '%');
+    }
   }
 }
 
@@ -642,6 +700,7 @@ function loadAll() {
       if (Array.isArray(data.okColleague) && data.okColleague.length > 0) okColleagueWords = data.okColleague;
       if (Array.isArray(data.noLeader) && data.noLeader.length > 0) noLeaderWords = data.noLeader;
       if (Array.isArray(data.noColleague) && data.noColleague.length > 0) noColleagueWords = data.noColleague;
+      if (typeof data.communityMixRate === 'number') communityMixRate = data.communityMixRate / 100;
     }
   } catch (e) { /* corrupted — use defaults */ }
   applyMode();
@@ -654,7 +713,8 @@ function persistAll() {
       okLeader: okLeaderWords,
       okColleague: okColleagueWords,
       noLeader: noLeaderWords,
-      noColleague: noColleagueWords
+      noColleague: noColleagueWords,
+      communityMixRate: Math.round(communityMixRate * 100)
     }));
   } catch (e) { /* quota exceeded */ }
 }
@@ -720,26 +780,46 @@ function pickWord(category, event) {
   }
 
   const commList = communityWords[mode][category];
-  const useCommunity = commList && commList.length > 0 && Math.random() < COMMUNITY_MIX_RATE;
+  const useCommunity = Math.random() < communityMixRate;
 
   if (useCommunity) {
-    const history = category === 'leader' ? leaderHistory : colleagueHistory;
-    const available = commList.filter(item => !history.includes(item.text));
-    const pool = available.length > 0 ? available : commList;
-    const item = pool[Math.floor(Math.random() * pool.length)];
-    if (category === 'leader') {
-      leaderHistory.push(item.text);
-      if (leaderHistory.length > 5) leaderHistory.shift();
+    if (commList && commList.length > 0) {
+      // Community available — pick one
+      const history = category === 'leader' ? leaderHistory : colleagueHistory;
+      const available = commList.filter(item => !history.includes(item.text));
+      const pool = available.length > 0 ? available : commList;
+      const item = pool[Math.floor(Math.random() * pool.length)];
+      if (category === 'leader') {
+        leaderHistory.push(item.text);
+        if (leaderHistory.length > 5) leaderHistory.shift();
+      } else {
+        colleagueHistory.push(item.text);
+        if (colleagueHistory.length > 5) colleagueHistory.shift();
+      }
+      displayCommunityWord(item.discussion, item.text, category);
+      setTimeout(() => {
+        copyToClipboard(item.text).then(success => {
+          if (success) showToast('✓ 已复制到剪贴板');
+        });
+      }, 100);
     } else {
-      colleagueHistory.push(item.text);
-      if (colleagueHistory.length > 5) colleagueHistory.shift();
+      // Community selected but not available — show appropriate message
+      const card = document.getElementById('wordCard');
+      card.classList.add('has-word');
+      const label = category === 'leader' ? '对领导' : '对同事';
+      let msg;
+      if (communityState === 'loading') {
+        msg = '社区词库加载中...';
+      } else if (communityState === 'failed') {
+        msg = '社区词库加载失败';
+      } else {
+        msg = '社区词库暂无此类词条';
+      }
+      card.innerHTML = `
+        <div class="word-label word-label-community">来自社区 · ${label}</div>
+        <div class="word-display" style="font-size:18px;color:var(--text-secondary)">${msg}</div>
+      `;
     }
-    displayCommunityWord(item.discussion, item.text, category);
-    setTimeout(() => {
-      copyToClipboard(item.text).then(success => {
-        if (success) showToast('✓ 已复制到剪贴板');
-      });
-    }, 100);
     return;
   }
 
@@ -834,6 +914,9 @@ function populateModalFields() {
     document.getElementById('leaderWords').value = noLeaderWords.join('\n');
     document.getElementById('colleagueWords').value = noColleagueWords.join('\n');
   }
+  const rate = Math.round(communityMixRate * 100);
+  document.getElementById('mixRateSlider').value = rate;
+  document.getElementById('mixRateInput').value = rate;
 }
 
 function saveWords() {
@@ -849,6 +932,12 @@ function saveWords() {
   } else {
     noLeaderWords = leaderArr.length > 0 ? leaderArr : [...DEFAULT_NO_LEADER];
     noColleagueWords = colleagueArr.length > 0 ? colleagueArr : [...DEFAULT_NO_COLLEAGUE];
+  }
+
+  // Save mix rate from modal
+  const rateVal = parseInt(document.getElementById('mixRateInput').value, 10);
+  if (!isNaN(rateVal)) {
+    communityMixRate = Math.max(0, Math.min(100, rateVal)) / 100;
   }
 
   persistAll();
@@ -870,6 +959,19 @@ function resetWords() {
   persistAll();
   populateModalFields();
   showToast('✓ 已恢复默认词库');
+}
+
+// ── Mix rate slider/number sync ──
+function onMixRateSlider(val) {
+  document.getElementById('mixRateInput').value = val;
+}
+
+function onMixRateInput(val) {
+  const num = parseInt(val, 10);
+  if (!isNaN(num)) {
+    const clamped = Math.max(0, Math.min(100, num));
+    document.getElementById('mixRateSlider').value = clamped;
+  }
 }
 
 // ── Utilities ──
