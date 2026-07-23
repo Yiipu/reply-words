@@ -340,14 +340,39 @@
     flex-direction: column;
     gap: 14px;
   }
-  .modal-body .edit-group label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 6px;
+
+  /* Tabs */
+  .modal-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-tab {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .modal-tab:hover {
     color: var(--text);
   }
-  .modal-body .edit-group textarea {
+  .modal-tab.active {
+    color: var(--mode-accent);
+    border-bottom-color: var(--mode-accent);
+    font-weight: 600;
+  }
+
+  /* Tab panels */
+  .tab-panel textarea {
     width: 100%;
     height: 160px;
     padding: 10px 12px;
@@ -361,49 +386,23 @@
     background: #fafbfc;
     transition: border-color 0.15s ease;
   }
-  body.no-mode .modal-body .edit-group textarea {
+  body.no-mode .tab-panel textarea {
     background: #2a2a2a;
     color: #ede4d3;
   }
-  .modal-body .edit-group textarea:focus {
+  .tab-panel textarea:focus {
     outline: none;
     border-color: #3498db;
     box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
   }
-  .modal-footer {
-    padding: 0 20px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .btn-save {
-    padding: 10px 0;
-    border: none;
-    border-radius: 8px;
-    background: #3498db;
-    color: #fff;
-    font-size: 15px;
-    font-weight: 600;
-    font-family: var(--font);
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-  .btn-save:hover { background: #2980b9; }
-  .btn-save:active { transform: scale(0.98); }
-  .btn-reset {
-    padding: 8px 0;
-    border: none;
-    background: transparent;
+  .word-count {
+    text-align: right;
+    font-size: 11px;
     color: var(--text-secondary);
-    font-size: 12px;
-    font-family: var(--font);
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    margin-top: 4px;
   }
-  .btn-reset:hover { color: #e74c3c; }
 
-  /* Mix rate control */
+  /* Mix rate */
   .mix-rate-group label {
     display: block;
     font-size: 13px;
@@ -447,6 +446,57 @@
     margin-top: 3px;
   }
 
+  /* Footer */
+  .modal-footer {
+    padding: 0 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .btn-save {
+    padding: 10px 0;
+    border: none;
+    border-radius: 8px;
+    background: #3498db;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn-save:hover { background: #2980b9; }
+  .btn-save:active { transform: scale(0.98); }
+  .modal-footer-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .btn-reset {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .btn-reset:hover {
+    color: #e74c3c;
+    border-color: #e74c3c;
+  }
+  .link-submit {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+  .link-submit:hover {
+    color: var(--text);
+    text-decoration: underline;
+  }
+
   /* Community entry */
   .word-label-community {
     background: #8e44ad;
@@ -458,15 +508,6 @@
   .community-vote iframe {
     width: 100% !important;
   }
-
-  /* Submit link (in modal footer) */
-  .link-submit {
-    text-align: center;
-    font-size: 12px;
-    color: var(--text-secondary);
-    text-decoration: none;
-  }
-  .link-submit:hover { color: var(--text); text-decoration: underline; }
 
   /* Toast container */
   .toast-container {
@@ -525,38 +566,44 @@
     <button class="btn-category btn-colleague" onclick="pickWord('colleague', event)">对同事</button>
   </div>
 
-  <button class="edit-toggle" onclick="openModal()">编辑词库</button>
+  <button class="edit-toggle" onclick="dialogManager.open()">编辑词库</button>
 </div>
 
-<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="if(event.target===this)closeModal()">
+<div class="modal-overlay" id="modalOverlay" style="display:none" onmousedown="if(event.target===this)dialogManager.close()">
   <div class="modal">
     <div class="modal-header">
       <h2>编辑词库</h2>
-      <button class="btn-close" onclick="closeModal()">✕</button>
+      <button class="btn-close" onclick="dialogManager.close()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="edit-group">
-        <label>对领导（一行一词）</label>
-        <textarea id="leaderWords" placeholder="好的&#10;收到&#10;明白"></textarea>
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tabLeader" onclick="dialogManager.switchTab('leader')">👔 对领导</button>
+        <button class="modal-tab" id="tabColleague" onclick="dialogManager.switchTab('colleague')">👥 对同事</button>
       </div>
-      <div class="edit-group">
-        <label>对同事（一行一词）</label>
-        <textarea id="colleagueWords" placeholder="好的&#10;OK&#10;收到"></textarea>
+      <div class="tab-panel" id="leaderPanel">
+        <textarea id="leaderWords" placeholder="好的&#10;收到&#10;明白" oninput="dialogManager.updateWordCount('leader')"></textarea>
+        <div class="word-count" id="leaderCount">共 0 个词</div>
+      </div>
+      <div class="tab-panel" id="colleaguePanel" style="display:none">
+        <textarea id="colleagueWords" placeholder="好的&#10;OK&#10;收到" oninput="dialogManager.updateWordCount('colleague')"></textarea>
+        <div class="word-count" id="colleagueCount">共 0 个词</div>
       </div>
       <div class="edit-group mix-rate-group">
         <label>社区词库混入比例</label>
         <div class="mix-rate-row">
-          <input type="range" id="mixRateSlider" min="0" max="100" step="5" value="20" oninput="onMixRateSlider(this.value)">
-          <input type="number" id="mixRateInput" min="0" max="100" value="20" oninput="onMixRateInput(this.value)">
+          <input type="range" id="mixRateSlider" min="0" max="100" step="5" value="20" oninput="dialogManager.onMixRateSlider(this.value)">
+          <input type="number" id="mixRateInput" min="0" max="100" value="20" oninput="dialogManager.onMixRateInput(this.value)">
           <span>%</span>
         </div>
         <div class="mix-rate-hint">随机展示社区词库的比例，设为 0 则仅使用本地词库</div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-save" onclick="saveWords()">保存</button>
-      <button class="btn-reset" onclick="resetWords()">恢复默认词库</button>
-      <a class="link-submit" href="https://github.com/Yiipu/reply-words/issues/new?template=submit-word.yml" target="_blank" rel="noopener">投稿到社区 →</a>
+      <button class="btn-save" onclick="dialogManager.save()">保存</button>
+      <div class="modal-footer-secondary">
+        <button class="btn-reset" onclick="dialogManager.reset()">恢复默认词库</button>
+        <a class="link-submit" href="https://github.com/Yiipu/reply-words/issues/new?template=submit-word.yml" target="_blank" rel="noopener">向社区投稿 →</a>
+      </div>
     </div>
   </div>
 </div>
@@ -892,87 +939,109 @@ function showToast(message) {
   });
 }
 
-// ── Modal ──
-function openModal() {
-  populateModalFields();
-  document.getElementById('modalOverlay').style.display = 'flex';
-}
+// ── Dialog Manager ──
+const dialogManager = {
+  tab: 'leader',
 
-function closeModal() {
-  document.getElementById('modalOverlay').style.display = 'none';
-}
+  open() {
+    this.populate();
+    document.getElementById('modalOverlay').style.display = 'flex';
+    this.switchTab('leader');
+  },
+
+  close() {
+    document.getElementById('modalOverlay').style.display = 'none';
+  },
+
+  switchTab(tab) {
+    this.tab = tab;
+    document.getElementById('tabLeader').classList.toggle('active', tab === 'leader');
+    document.getElementById('tabColleague').classList.toggle('active', tab === 'colleague');
+    document.getElementById('leaderPanel').style.display = tab === 'leader' ? '' : 'none';
+    document.getElementById('colleaguePanel').style.display = tab === 'colleague' ? '' : 'none';
+  },
+
+  populate() {
+    if (mode === 'ok') {
+      document.getElementById('leaderWords').value = okLeaderWords.join('\n');
+      document.getElementById('colleagueWords').value = okColleagueWords.join('\n');
+    } else {
+      document.getElementById('leaderWords').value = noLeaderWords.join('\n');
+      document.getElementById('colleagueWords').value = noColleagueWords.join('\n');
+    }
+    const rate = Math.round(communityMixRate * 100);
+    document.getElementById('mixRateSlider').value = rate;
+    document.getElementById('mixRateInput').value = rate;
+    this.updateWordCount('leader');
+    this.updateWordCount('colleague');
+  },
+
+  updateWordCount(category) {
+    const textarea = document.getElementById(category === 'leader' ? 'leaderWords' : 'colleagueWords');
+    const count = textarea.value.split('\n').map(s => s.trim()).filter(s => s.length > 0).length;
+    document.getElementById(category === 'leader' ? 'leaderCount' : 'colleagueCount').textContent = '共 ' + count + ' 个词';
+  },
+
+  save() {
+    const rawLeader = document.getElementById('leaderWords').value;
+    const rawColleague = document.getElementById('colleagueWords').value;
+
+    const leaderArr = rawLeader.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+    const colleagueArr = rawColleague.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+    if (mode === 'ok') {
+      okLeaderWords = leaderArr.length > 0 ? leaderArr : [...DEFAULT_OK_LEADER];
+      okColleagueWords = colleagueArr.length > 0 ? colleagueArr : [...DEFAULT_OK_COLLEAGUE];
+    } else {
+      noLeaderWords = leaderArr.length > 0 ? leaderArr : [...DEFAULT_NO_LEADER];
+      noColleagueWords = colleagueArr.length > 0 ? colleagueArr : [...DEFAULT_NO_COLLEAGUE];
+    }
+
+    const rateVal = parseInt(document.getElementById('mixRateInput').value, 10);
+    if (!isNaN(rateVal)) {
+      communityMixRate = Math.max(0, Math.min(100, rateVal)) / 100;
+    }
+    // Reset input to actual stored value (handles empty/NaN input)
+    document.getElementById('mixRateInput').value = Math.round(communityMixRate * 100);
+    document.getElementById('mixRateSlider').value = Math.round(communityMixRate * 100);
+
+    persistAll();
+    this.close();
+    showToast('✓ 已保存');
+  },
+
+  reset() {
+    if (!confirm('确定恢复当前模式（' + (mode === 'ok' ? 'OK' : '😈') + '）的默认词库？编辑的内容将被覆盖。')) return;
+
+    if (mode === 'ok') {
+      okLeaderWords = [...DEFAULT_OK_LEADER];
+      okColleagueWords = [...DEFAULT_OK_COLLEAGUE];
+    } else {
+      noLeaderWords = [...DEFAULT_NO_LEADER];
+      noColleagueWords = [...DEFAULT_NO_COLLEAGUE];
+    }
+
+    persistAll();
+    this.populate();
+    showToast('✓ 已恢复默认词库');
+  },
+
+  onMixRateSlider(val) {
+    document.getElementById('mixRateInput').value = val;
+  },
+
+  onMixRateInput(val) {
+    const num = parseInt(val, 10);
+    if (!isNaN(num)) {
+      const clamped = Math.max(0, Math.min(100, num));
+      document.getElementById('mixRateSlider').value = clamped;
+    }
+  },
+};
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') dialogManager.close();
 });
-
-function populateModalFields() {
-  if (mode === 'ok') {
-    document.getElementById('leaderWords').value = okLeaderWords.join('\n');
-    document.getElementById('colleagueWords').value = okColleagueWords.join('\n');
-  } else {
-    document.getElementById('leaderWords').value = noLeaderWords.join('\n');
-    document.getElementById('colleagueWords').value = noColleagueWords.join('\n');
-  }
-  const rate = Math.round(communityMixRate * 100);
-  document.getElementById('mixRateSlider').value = rate;
-  document.getElementById('mixRateInput').value = rate;
-}
-
-function saveWords() {
-  const rawLeader = document.getElementById('leaderWords').value;
-  const rawColleague = document.getElementById('colleagueWords').value;
-
-  const leaderArr = rawLeader.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-  const colleagueArr = rawColleague.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-
-  if (mode === 'ok') {
-    okLeaderWords = leaderArr.length > 0 ? leaderArr : [...DEFAULT_OK_LEADER];
-    okColleagueWords = colleagueArr.length > 0 ? colleagueArr : [...DEFAULT_OK_COLLEAGUE];
-  } else {
-    noLeaderWords = leaderArr.length > 0 ? leaderArr : [...DEFAULT_NO_LEADER];
-    noColleagueWords = colleagueArr.length > 0 ? colleagueArr : [...DEFAULT_NO_COLLEAGUE];
-  }
-
-  // Save mix rate from modal
-  const rateVal = parseInt(document.getElementById('mixRateInput').value, 10);
-  if (!isNaN(rateVal)) {
-    communityMixRate = Math.max(0, Math.min(100, rateVal)) / 100;
-  }
-
-  persistAll();
-  closeModal();
-  showToast('✓ 已保存');
-}
-
-function resetWords() {
-  if (!confirm('确定恢复当前模式（' + (mode === 'ok' ? 'OK' : '😈') + '）的默认词库？编辑的内容将被覆盖。')) return;
-
-  if (mode === 'ok') {
-    okLeaderWords = [...DEFAULT_OK_LEADER];
-    okColleagueWords = [...DEFAULT_OK_COLLEAGUE];
-  } else {
-    noLeaderWords = [...DEFAULT_NO_LEADER];
-    noColleagueWords = [...DEFAULT_NO_COLLEAGUE];
-  }
-
-  persistAll();
-  populateModalFields();
-  showToast('✓ 已恢复默认词库');
-}
-
-// ── Mix rate slider/number sync ──
-function onMixRateSlider(val) {
-  document.getElementById('mixRateInput').value = val;
-}
-
-function onMixRateInput(val) {
-  const num = parseInt(val, 10);
-  if (!isNaN(num)) {
-    const clamped = Math.max(0, Math.min(100, num));
-    document.getElementById('mixRateSlider').value = clamped;
-  }
-}
 
 // ── Utilities ──
 function escapeHtml(str) {
