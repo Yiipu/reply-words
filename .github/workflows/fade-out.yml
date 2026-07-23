@@ -38,9 +38,10 @@ jobs:
                   );
                   const up = result.repository.discussion.up.totalCount;
                   const down = result.repository.discussion.down.totalCount;
+                  const total = up + down;
 
-                  if (down > up * 1.5) {
-                    core.info(`衰减：${item.text}（👍${up} 👎${down}）`);
+                  if (total >= 10 && down > up * 1.5) {
+                    core.info(`衰减：${item.text}（👍${up} 👎${down}，共${total}票）`);
                   } else {
                     kept.push(item);
                   }
