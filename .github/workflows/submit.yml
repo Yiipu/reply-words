@@ -1,0 +1,122 @@
+name: 投稿处理
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  discussions: write
+  issues: write
+
+jobs:
+  submit:
+    if: contains(github.event.issue.labels.*.name, 'word-submission')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 解析并校验
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = context.payload.issue.body || '';
+
+            function field(label) {
+              const re = new RegExp('### ' + label + '\\s*\\n\\s*\\n([^\\n]*)');
+              const m = body.match(re);
+              return m ? m[1].trim() : '';
+            }
+
+            const text = field('词条内容');
+            const category = field('类别');
+            const mode = field('模式');
+
+            const errors = [];
+            if (!text) errors.push('内容不能为空');
+            if (text.length > 50) errors.push('词条长度不能超过50个字符');
+            if (!['leader', 'colleague'].includes(category)) errors.push('类别无效');
+            if (!['ok', 'no'].includes(mode)) errors.push('模式无效');
+
+            let db = null;
+            if (errors.length === 0) {
+              db = JSON.parse(fs.readFileSync('community.json', 'utf8'));
+              if (db[mode][category].some(w => w.text === text)) errors.push('该词条已存在');
+            }
+
+            if (errors.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '❌ 投稿未通过：\n' + errors.map(e => '- ' + e).join('\n')
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: context.issue.number, state: 'closed'
+              });
+              core.setOutput('ok', 'false');
+              return;
+            }
+
+            core.setOutput('ok', 'true');
+            core.setOutput('text', text);
+            core.setOutput('category', category);
+            core.setOutput('mode', mode);
+
+      - name: 创建 Discussion 并写入词库
+        if: steps.parse.outputs.ok == 'true'
+        uses: actions/github-script@v7
+        env:
+          WORD_TEXT: ${{ steps.parse.outputs.text }}
+          WORD_CATEGORY: ${{ steps.parse.outputs.category }}
+          WORD_MODE: ${{ steps.parse.outputs.mode }}
+        with:
+          script: |
+            const fs = require('fs');
+            const REPO_ID = 'R_kgDOTg3sHQ';
+            const CATEGORY_ID = 'DIC_kwDOTg3sHc4DBxyQ';
+            const text = process.env.WORD_TEXT;
+            const category = process.env.WORD_CATEGORY;
+            const mode = process.env.WORD_MODE;
+
+            const result = await github.graphql(
+              `mutation($repoId: ID!, $catId: ID!, $title: String!, $body: String!) {
+                createDiscussion(input: {repositoryId: $repoId, categoryId: $catId, title: $title, body: $body}) {
+                  discussion { number }
+                }
+              }`,
+              {
+                repoId: REPO_ID,
+                catId: CATEGORY_ID,
+                title: text,
+                body: `来自投稿 #${context.issue.number}\n\n类别：${category}　模式：${mode}\n\n给这条回复语投票 👍/👎`
+              }
+            );
+            const discussionNumber = result.createDiscussion.discussion.number;
+
+            const db = JSON.parse(fs.readFileSync('community.json', 'utf8'));
+            db[mode][category].push({ text, discussion: discussionNumber });
+            fs.writeFileSync('community.json', JSON.stringify(db, null, 2) + '\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `✅ 投稿已通过，已收录：https://github.com/${context.repo.owner}/${context.repo.repo}/discussions/${discussionNumber}`
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, state: 'closed'
+            });
+
+      - name: 提交词库变更
+        if: steps.parse.outputs.ok == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add community.json
+          if ! git diff --cached --quiet; then
+            git commit -m "feat: 收录投稿 #${{ github.event.issue.number }}"
+            git push
+          fi

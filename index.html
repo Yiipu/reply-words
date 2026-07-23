@@ -408,35 +408,21 @@
     background: #8e44ad;
     font-size: 10px;
   }
-  .community-feedback {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+  .community-vote {
+    width: 100%;
   }
-  .btn-feedback {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 4px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--copy-bg);
+  .community-vote iframe {
+    width: 100% !important;
+  }
+
+  /* Submit link (in modal footer) */
+  .link-submit {
+    text-align: center;
+    font-size: 12px;
     color: var(--text-secondary);
-    font-size: 13px;
-    font-family: var(--font);
-    cursor: pointer;
-    transition: background 0.12s, color 0.12s;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+    text-decoration: none;
   }
-  .btn-feedback:hover { background: var(--copy-hover); color: var(--text); }
-  .btn-feedback:active { transform: scale(0.95); }
-  .btn-feedback.voted {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-  .btn-feedback.voted-thumb { color: #2ecc71; border-color: #2ecc71; }
-  .btn-feedback.voted-down { color: #e74c3c; border-color: #e74c3c; }
+  .link-submit:hover { color: var(--text); text-decoration: underline; }
 
   /* Toast container */
   .toast-container {
@@ -517,6 +503,7 @@
     <div class="modal-footer">
       <button class="btn-save" onclick="saveWords()">保存</button>
       <button class="btn-reset" onclick="resetWords()">恢复默认词库</button>
+      <a class="link-submit" href="https://github.com/Yiipu/reply-words/issues/new?template=submit-word.yml" target="_blank" rel="noopener">投稿到社区 →</a>
     </div>
   </div>
 </div>
@@ -596,70 +583,52 @@ let leaderHistory = [];
 let colleagueHistory = [];
 
 // ── Community words ──
-const API_BASE = '';  // same origin when deployed; set to 'http://47.113.113.189:8799' for local dev
+const COMMUNITY_JSON = 'community.json';
+const GISCUS_REPO = 'Yiipu/reply-words';
+const GISCUS_REPO_ID = 'R_kgDOTg3sHQ';
+const GISCUS_CATEGORY = 'Announcements';
+const GISCUS_CATEGORY_ID = 'DIC_kwDOTg3sHc4DBxyQ';
 let communityWords = { ok: { leader: [], colleague: [] }, no: { leader: [], colleague: [] } };
-let communityWordMap = {};  // text → {id, category, mode}
 const COMMUNITY_MIX_RATE = 0.2;  // 20% chance to show community word
 
 async function fetchCommunityWords() {
   try {
-    const resp = await fetch(API_BASE + '/api/community-words');
-    if (resp.status === 304) return;  // not modified
+    const resp = await fetch(COMMUNITY_JSON, { cache: 'no-cache' });
     if (!resp.ok) return;
-    const data = await resp.json();
-    communityWords = data;
-    // Build reverse lookup map
-    communityWordMap = {};
-    for (const mode of ['ok', 'no']) {
-      for (const cat of ['leader', 'colleague']) {
-        for (const item of data[mode][cat]) {
-          communityWordMap[item.text] = { id: item.id, category: cat, mode };
-        }
-      }
-    }
+    communityWords = await resp.json();
   } catch (e) {
     // Offline — keep existing community words, no toast
   }
 }
 
-function displayCommunityWord(id, word, category) {
+function displayCommunityWord(discussion, word, category) {
   const card = document.getElementById('wordCard');
   card.classList.add('has-word');
   card.innerHTML = `
     <div class="word-label word-label-community">来自社区 · ${category === 'leader' ? '对领导' : '对同事'}</div>
     <div class="word-display">${escapeHtml(word)}</div>
-    <div class="community-feedback" id="communityFeedback">
-      <button class="btn-feedback" onclick="submitFeedback(event, ${id}, 1)" title="有用">
-        👍
-      </button>
-      <button class="btn-feedback" onclick="submitFeedback(event, ${id}, -1)" title="没用">
-        👎
-      </button>
-    </div>
+    <div class="community-vote" id="communityVote"></div>
   `;
+  mountGiscusVote(discussion);
 }
 
-async function submitFeedback(event, wordId, vote) {
-  event.preventDefault();
-  const btn = event.currentTarget;
-  const container = document.getElementById('communityFeedback');
+function mountGiscusVote(discussion) {
+  const container = document.getElementById('communityVote');
   if (!container) return;
-  const buttons = container.querySelectorAll('.btn-feedback');
-  buttons.forEach(b => b.classList.add('voted'));
-  btn.classList.add(vote === 1 ? 'voted-thumb' : 'voted-down');
-
-  try {
-    const resp = await fetch(API_BASE + '/api/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ word_id: wordId, vote })
-    });
-    if (resp.ok) {
-      showToast('✓ 反馈已记录');
-    }
-  } catch (e) {
-    showToast('离线，反馈已丢弃');
-  }
+  const script = document.createElement('script');
+  script.src = 'https://giscus.app/client.js';
+  script.async = true;
+  script.crossOrigin = 'anonymous';
+  script.setAttribute('data-repo', GISCUS_REPO);
+  script.setAttribute('data-repo-id', GISCUS_REPO_ID);
+  script.setAttribute('data-category', GISCUS_CATEGORY);
+  script.setAttribute('data-category-id', GISCUS_CATEGORY_ID);
+  script.setAttribute('data-mapping', 'number');
+  script.setAttribute('data-term', String(discussion));
+  script.setAttribute('data-reactions-enabled', '1');
+  script.setAttribute('data-input-position', 'top');
+  script.setAttribute('data-theme', document.body.classList.contains('no-mode') ? 'dark' : 'light');
+  container.appendChild(script);
 }
 
 // ── Load from localStorage ──
@@ -765,7 +734,7 @@ function pickWord(category, event) {
       colleagueHistory.push(item.text);
       if (colleagueHistory.length > 5) colleagueHistory.shift();
     }
-    displayCommunityWord(item.id, item.text, category);
+    displayCommunityWord(item.discussion, item.text, category);
     setTimeout(() => {
       copyToClipboard(item.text).then(success => {
         if (success) showToast('✓ 已复制到剪贴板');

@@ -1,0 +1,31 @@
+name: 投稿社区词
+description: 提交一条新的回复语到社区词库
+title: "[投稿] "
+labels: ["word-submission"]
+body:
+  - type: input
+    id: text
+    attributes:
+      label: 词条内容
+      description: 不超过 50 个字符
+      placeholder: 收到，我尽快处理
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: 类别
+      options:
+        - leader
+        - colleague
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: 模式
+      options:
+        - ok
+        - "no"
+    validations:
+      required: true

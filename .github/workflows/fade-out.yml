@@ -1,0 +1,62 @@
+name: 社区词衰减
+
+on:
+  schedule:
+    - cron: '0 18 * * *'  # 每天 UTC 18:00（北京时间 02:00）
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fade-out:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 统计投票并衰减
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const db = JSON.parse(fs.readFileSync('community.json', 'utf8'));
+
+            for (const mode of ['ok', 'no']) {
+              for (const category of ['leader', 'colleague']) {
+                const kept = [];
+                for (const item of db[mode][category]) {
+                  const result = await github.graphql(
+                    `query($owner: String!, $repo: String!, $num: Int!) {
+                      repository(owner: $owner, name: $repo) {
+                        discussion(number: $num) {
+                          up: reactions(content: THUMBS_UP) { totalCount }
+                          down: reactions(content: THUMBS_DOWN) { totalCount }
+                        }
+                      }
+                    }`,
+                    { owner: context.repo.owner, repo: context.repo.repo, num: item.discussion }
+                  );
+                  const up = result.repository.discussion.up.totalCount;
+                  const down = result.repository.discussion.down.totalCount;
+
+                  if (down > up * 1.5) {
+                    core.info(`衰减：${item.text}（👍${up} 👎${down}）`);
+                  } else {
+                    kept.push(item);
+                  }
+                }
+                db[mode][category] = kept;
+              }
+            }
+
+            fs.writeFileSync('community.json', JSON.stringify(db, null, 2) + '\n');
+
+      - name: 提交变更
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add community.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: 社区词衰减"
+            git push
+          fi
