@@ -7,7 +7,7 @@
 ## 社区词条的生命周期
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[用户提交 Issue Form] --> B{submit.yml 硬校验}
     B -->|不通过| C[❌ 评论错误原因 + 关闭 Issue]
     B -->|通过| D[GraphQL 创建 Discussion，并写入 community.json]
