@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>词库</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #eef7f2;
+    --card-bg: #ffffff;
+    --text: #1a3c30;
+    --text-secondary: #5a7d70;
+    --border: #c8e0d4;
+    --leader-bg: #0d6b4f;
+    --leader-hover: #0a5a42;
+    --colleague-bg: #20b873;
+    --colleague-hover: #1a9e60;
+    --copy-bg: #e4f2ea;
+    --copy-hover: #d4e8de;
+    --toast-bg: #0d6b4f;
+    --toast-text: #fff;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    --mode-accent: #0d6b4f;
+  }
+
+  /* 😈 mode overrides */
+  body.no-mode {
+    --bg: #121212;
+    --card-bg: #1e1e1e;
+    --text: #ede4d3;
+    --text-secondary: #9a9080;
+    --border: #333333;
+    --leader-bg: #e67e22;
+    --leader-hover: #d35400;
+    --colleague-bg: #f39c12;
+    --colleague-hover: #e67e22;
+    --copy-bg: #2a2a2a;
+    --copy-hover: #383838;
+    --toast-bg: #e67e22;
+    --toast-text: #fff;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.5);
+    --mode-accent: #e67e22;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .header h1 .emoji {
+    font-size: 26px;
+  }
+  .header h1 .brand {
+    font-weight: 800;
+    font-size: 26px;
+    letter-spacing: 1px;
+    color: var(--mode-accent);
+    transition: color 0.3s ease;
+  }
+  .header h1 .cn {
+    font-weight: 500;
+    margin-left: 2px;
+  }
+  .header p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* Mode toggle — segmented control */
+  .mode-segment {
+    display: flex;
+    background: var(--copy-bg);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 0;
+  }
+  .mode-seg-btn {
+    flex: 1;
+    padding: 7px 0;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    text-align: center;
+  }
+  .mode-seg-btn.active {
+    background: var(--card-bg);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+  .mode-seg-btn:focus-visible {
+    outline: 2px solid #3498db;
+    outline-offset: -2px;
+  }
+
+  /* Buttons row */
+  .btn-row {
+    display: flex;
+    gap: 12px;
+  }
+  .btn-category {
+    flex: 1;
+    padding: 14px 0;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.3s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-category:active {
+    transform: scale(0.97);
+  }
+  .btn-category:focus-visible {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+  }
+  .btn-leader {
+    background: var(--leader-bg);
+  }
+  .btn-leader:hover {
+    background: var(--leader-hover);
+    box-shadow: var(--shadow-lg);
+  }
+  .btn-colleague {
+    background: var(--colleague-bg);
+  }
+  .btn-colleague:hover {
+    background: var(--colleague-hover);
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Word card */
+  .word-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    height: 170px;
+    justify-content: center;
+    transition: box-shadow 0.2s ease, background 0.3s ease;
+  }
+  .word-card.has-word {
+    box-shadow: var(--shadow-lg);
+  }
+  .word-label {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 10px;
+    letter-spacing: 0.5px;
+    color: #fff;
+    display: inline-block;
+  }
+  .word-label-leader { background: var(--leader-bg); }
+  .word-label-colleague { background: var(--colleague-bg); }
+  .word-display {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-align: center;
+    word-break: break-all;
+    line-height: 1.4;
+    animation: wordIn 0.25s ease;
+  }
+  @keyframes wordIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .word-placeholder {
+    font-size: 15px;
+    color: #bdc3c7;
+    font-weight: 400;
+  }
+
+  /* Copy button */
+  .btn-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--copy-bg);
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-copy:hover { background: var(--copy-hover); }
+  .btn-copy:active { transform: scale(0.97); }
+  .btn-copy:focus-visible {
+    outline: 2px solid #3498db;
+    outline-offset: 2px;
+  }
+  .btn-copy svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  /* Edit button */
+  .edit-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-family: var(--font);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: color 0.15s ease, background 0.15s ease;
+    width: 100%;
+  }
+  .edit-toggle:hover {
+    color: var(--text);
+    background: rgba(128,128,128,0.1);
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 900;
+    padding: 20px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .modal {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    width: 100%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: modalIn 0.25s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 0;
+  }
+  .modal-header h2 {
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .btn-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    font-size: 20px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .btn-close:hover {
+    background: rgba(128,128,128,0.15);
+    color: var(--text);
+  }
+  .modal-body {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .modal-body .edit-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .modal-body .edit-group textarea {
+    width: 100%;
+    height: 120px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--font);
+    line-height: 1.8;
+    resize: vertical;
+    color: var(--text);
+    background: #fafbfc;
+    transition: border-color 0.15s ease;
+  }
+  body.no-mode .modal-body .edit-group textarea {
+    background: #2a2a2a;
+    color: #ede4d3;
+  }
+  .modal-body .edit-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+  }
+  .modal-footer {
+    padding: 0 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .btn-save {
+    padding: 10px 0;
+    border: none;
+    border-radius: 8px;
+    background: #3498db;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn-save:hover { background: #2980b9; }
+  .btn-save:active { transform: scale(0.98); }
+  .btn-reset {
+    padding: 8px 0;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-family: var(--font);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .btn-reset:hover { color: #e74c3c; }
+
+  /* Community entry */
+  .word-label-community {
+    background: #8e44ad;
+    font-size: 10px;
+  }
+  .community-feedback {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .btn-feedback {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--copy-bg);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-feedback:hover { background: var(--copy-hover); color: var(--text); }
+  .btn-feedback:active { transform: scale(0.95); }
+  .btn-feedback.voted {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .btn-feedback.voted-thumb { color: #2ecc71; border-color: #2ecc71; }
+  .btn-feedback.voted-down { color: #e74c3c; border-color: #e74c3c; }
+
+  /* Toast container */
+  .toast-container {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--toast-bg);
+    color: var(--toast-text);
+    padding: 8px 20px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    white-space: nowrap;
+    max-height: 40px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    animation: toastLife 1.3s ease forwards;
+  }
+  @keyframes toastLife {
+    0%   { opacity: 0; transform: translateY(-6px); max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+    6%   { opacity: 1; transform: translateY(0);     max-height: 40px; margin-bottom: 8px; padding-top: 8px; padding-bottom: 8px; }
+    72%  { opacity: 1; transform: translateY(0);     max-height: 40px; margin-bottom: 8px; padding-top: 8px; padding-bottom: 8px; }
+    100% { opacity: 0; transform: translateY(0);     max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1><span class="emoji" id="headerEmoji">👌</span><span class="brand" id="headerBrand">OK</span><span class="cn">词库</span></h1>
+    <p id="headerSub">好的好的，收到收到</p>
+  </div>
+
+  <div class="mode-segment">
+    <button class="mode-seg-btn active" id="okBtn" onclick="setMode('ok')">👌 OK</button>
+    <button class="mode-seg-btn" id="noBtn" onclick="setMode('no')">😈 NO</button>
+  </div>
+
+  <div class="word-card" id="wordCard">
+    <div class="word-placeholder">👇 点击下方按钮</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-category btn-leader" onclick="pickWord('leader', event)">对领导</button>
+    <button class="btn-category btn-colleague" onclick="pickWord('colleague', event)">对同事</button>
+  </div>
+
+  <button class="edit-toggle" onclick="openModal()">编辑词库</button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>编辑词库</h2>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-group">
+        <label>对领导（一行一词）</label>
+        <textarea id="leaderWords" placeholder="好的&#10;收到&#10;明白"></textarea>
+      </div>
+      <div class="edit-group">
+        <label>对同事（一行一词）</label>
+        <textarea id="colleagueWords" placeholder="好的&#10;OK&#10;收到"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-save" onclick="saveWords()">保存</button>
+      <button class="btn-reset" onclick="resetWords()">恢复默认词库</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ── Default word banks ──
+const DEFAULT_OK_LEADER = [
+  "好的", "收到", "明白", "了解了", "清楚了", "没问题",
+  "马上处理", "这就办", "我记下了", "好的收到",
+  "明白，我去落实", "收到，我来处理", "好的，马上安排",
+  "了解，稍后反馈", "我跟进一下", "收到，我整理一下",
+  "好的，我确认后回复", "明白了，谢谢", "收到，尽快处理",
+  "好的，按您说的办"
+];
+
+const DEFAULT_OK_COLLEAGUE = [
+  "好的", "OK", "收到", "明白", "没问题",
+  "搞定", "妥了", "收到收到", "行", "好嘞",
+  "懂了", "了解", "got it", "收到，我看看", "可以的",
+  "安排", "走起", "好滴", "冲", "收到，在看了",
+  "好哦", "👌", "yes", "拿捏", "安排上"
+];
+
+const DEFAULT_NO_LEADER = [
+  "好的呢，您说得都对",
+  "这个想法很有创意呢",
+  "我再研究研究哈",
+  "嗯，您继续说",
+  "领导说得是",
+  "可以的，您安排就成",
+  "好的，我尽量",
+  "收到，我看看哈",
+  "行，我好好琢磨琢磨",
+  "明白，您放心",
+  "这个嘛，不好说",
+  "我尽量推进吧",
+  "行，我先记下",
+  "嗯嗯，有道理",
+  "好的，我保留意见",
+  "可以的，您定",
+  "领导英明",
+  "好的，我努努力"
+];
+
+const DEFAULT_NO_COLLEAGUE = [
+  "不行",
+  "没空",
+  "算了吧",
+  "想多了",
+  "搞不了",
+  "别闹",
+  "懒得弄",
+  "你去找别人",
+  "有完没完",
+  "不",
+  "不要",
+  "拒绝",
+  "pass",
+  "想得美",
+  "凭啥",
+  "关我什么事",
+  "你自己弄",
+  "没兴趣",
+  "哦",
+  "所以呢"
+];
+
+// ── State ──
+let mode = 'ok'; // 'ok' | 'no'
+let okLeaderWords = [...DEFAULT_OK_LEADER];
+let okColleagueWords = [...DEFAULT_OK_COLLEAGUE];
+let noLeaderWords = [...DEFAULT_NO_LEADER];
+let noColleagueWords = [...DEFAULT_NO_COLLEAGUE];
+let leaderHistory = [];
+let colleagueHistory = [];
+
+// ── Community words ──
+const API_BASE = '';  // same origin when deployed; set to 'http://47.113.113.189:8799' for local dev
+let communityWords = { ok: { leader: [], colleague: [] }, no: { leader: [], colleague: [] } };
+let communityWordMap = {};  // text → {id, category, mode}
+const COMMUNITY_MIX_RATE = 0.2;  // 20% chance to show community word
+
+async function fetchCommunityWords() {
+  try {
+    const resp = await fetch(API_BASE + '/api/community-words');
+    if (resp.status === 304) return;  // not modified
+    if (!resp.ok) return;
+    const data = await resp.json();
+    communityWords = data;
+    // Build reverse lookup map
+    communityWordMap = {};
+    for (const mode of ['ok', 'no']) {
+      for (const cat of ['leader', 'colleague']) {
+        for (const text of data[mode][cat]) {
+          communityWordMap[text] = { category: cat, mode };
+        }
+      }
+    }
+  } catch (e) {
+    // Offline — keep existing community words, no toast
+  }
+}
+
+function displayCommunityWord(word, category) {
+  const card = document.getElementById('wordCard');
+  card.classList.add('has-word');
+  card.innerHTML = `
+    <div class="word-label word-label-community">来自社区 · ${category === 'leader' ? '对领导' : '对同事'}</div>
+    <div class="word-display">${escapeHtml(word)}</div>
+    <div class="community-feedback" id="communityFeedback">
+      <button class="btn-feedback" onclick="submitFeedback(event, '${escapeAttr(word)}', '${category}', 1)" title="有用">
+        👍
+      </button>
+      <button class="btn-feedback" onclick="submitFeedback(event, '${escapeAttr(word)}', '${category}', -1)" title="没用">
+        👎
+      </button>
+    </div>
+  `;
+}
+
+async function submitFeedback(event, word, category, vote) {
+  event.preventDefault();
+  const btn = event.currentTarget;
+  // Prevent double-vote
+  const container = document.getElementById('communityFeedback');
+  if (!container) return;
+  const buttons = container.querySelectorAll('.btn-feedback');
+  buttons.forEach(b => b.classList.add('voted'));
+  // Highlight the chosen one
+  btn.classList.add(vote === 1 ? 'voted-thumb' : 'voted-down');
+
+  try {
+    // Look up word_id — we need it from the server
+    // For now, we send text and let backend resolve (or we store ids in communityWordMap)
+    const resp = await fetch(API_BASE + '/api/feedback-by-text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: word, category, vote })
+    });
+    if (resp.ok) {
+      showToast('✓ 反馈已记录');
+    }
+  } catch (e) {
+    showToast('离线，反馈已丢弃');
+  }
+}
+
+// ── Load from localStorage ──
+function loadAll() {
+  try {
+    const raw = localStorage.getItem('reply-words-data-v2');
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data.mode === 'ok' || data.mode === 'no') mode = data.mode;
+      if (Array.isArray(data.okLeader) && data.okLeader.length > 0) okLeaderWords = data.okLeader;
+      if (Array.isArray(data.okColleague) && data.okColleague.length > 0) okColleagueWords = data.okColleague;
+      if (Array.isArray(data.noLeader) && data.noLeader.length > 0) noLeaderWords = data.noLeader;
+      if (Array.isArray(data.noColleague) && data.noColleague.length > 0) noColleagueWords = data.noColleague;
+    }
+  } catch (e) { /* corrupted — use defaults */ }
+  applyMode();
+}
+
+function persistAll() {
+  try {
+    localStorage.setItem('reply-words-data-v2', JSON.stringify({
+      mode,
+      okLeader: okLeaderWords,
+      okColleague: okColleagueWords,
+      noLeader: noLeaderWords,
+      noColleague: noColleagueWords
+    }));
+  } catch (e) { /* quota exceeded */ }
+}
+
+// ── Mode switching ──
+function setMode(newMode) {
+  if (mode === newMode) return;
+  mode = newMode;
+  applyMode();
+  persistAll();
+  // Clear displayed word when switching mode
+  const card = document.getElementById('wordCard');
+  card.classList.remove('has-word');
+  card.innerHTML = '<div class="word-placeholder">👇 点击下方按钮</div>';
+}
+
+function applyMode() {
+  const isNo = mode === 'no';
+  document.body.classList.toggle('no-mode', isNo);
+
+  // Header
+  document.getElementById('headerEmoji').textContent = isNo ? '😈' : '👌';
+  document.getElementById('headerBrand').textContent = isNo ? 'NO' : 'OK';
+  document.getElementById('headerSub').textContent = isNo ? '拒绝，也是一门艺术' : '好的好的，收到收到';
+
+  // Toggle
+  document.getElementById('okBtn').classList.toggle('active', !isNo);
+  document.getElementById('noBtn').classList.toggle('active', isNo);
+}
+
+// ── Current word lists (mode-aware) ──
+function getLeaderWords() { return mode === 'ok' ? okLeaderWords : noLeaderWords; }
+function getColleagueWords() { return mode === 'ok' ? okColleagueWords : noColleagueWords; }
+
+// ── Pick random word (avoid recent 5) ──
+function pickRandom(list, history) {
+  if (list.length === 0) return "（词库为空）";
+  if (list.length === 1) return list[0];
+  const available = list.filter(w => !history.includes(w));
+  const pool = available.length > 0 ? available : list;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── Display word ──
+function displayWord(word, category) {
+  const card = document.getElementById('wordCard');
+  card.classList.add('has-word');
+  card.innerHTML = `
+    <div class="word-label word-label-${category}">${category === 'leader' ? '对领导' : '对同事'}</div>
+    <div class="word-display">${escapeHtml(word)}</div>
+    <button class="btn-copy" onclick="copyWord(event)" data-word="${escapeAttr(word)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      复制
+    </button>
+  `;
+}
+
+// ── Pick + display + auto-copy ──
+function pickWord(category, event) {
+  if (event) {
+    event.preventDefault();
+    event.target.blur();
+  }
+
+  const commList = communityWords[mode][category];
+  const useCommunity = commList && commList.length > 0 && Math.random() < COMMUNITY_MIX_RATE;
+
+  if (useCommunity) {
+    // Avoid recent 5 for community too
+    const history = category === 'leader' ? leaderHistory : colleagueHistory;
+    const word = pickRandom(commList, history);
+    if (category === 'leader') {
+      leaderHistory.push(word);
+      if (leaderHistory.length > 5) leaderHistory.shift();
+    } else {
+      colleagueHistory.push(word);
+      if (colleagueHistory.length > 5) colleagueHistory.shift();
+    }
+    displayCommunityWord(word, category);
+    setTimeout(() => {
+      copyToClipboard(word).then(success => {
+        if (success) showToast('✓ 已复制到剪贴板');
+      });
+    }, 100);
+    return;
+  }
+
+  const list = category === 'leader' ? getLeaderWords() : getColleagueWords();
+  const history = category === 'leader' ? leaderHistory : colleagueHistory;
+  const word = pickRandom(list, history);
+
+  if (category === 'leader') {
+    leaderHistory.push(word);
+    if (leaderHistory.length > 5) leaderHistory.shift();
+  } else {
+    colleagueHistory.push(word);
+    if (colleagueHistory.length > 5) colleagueHistory.shift();
+  }
+
+  displayWord(word, category);
+
+  setTimeout(() => {
+    copyToClipboard(word).then(success => {
+      if (success) showToast('✓ 已复制到剪贴板');
+    });
+  }, 100);
+}
+
+// ── Copy button click ──
+function copyWord(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  event.target.blur();
+  const word = event.currentTarget.dataset.word;
+  setTimeout(() => {
+    copyToClipboard(word).then(success => {
+      if (success) showToast('✓ 已复制到剪贴板');
+    });
+  }, 100);
+}
+
+// ── Clipboard ──
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      ta.style.top = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e2) {
+      return false;
+    }
+  }
+}
+
+// ── Toast ──
+function showToast(message) {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = message;
+  container.appendChild(el);
+  el.addEventListener('animationend', function(e) {
+    if (e.animationName === 'toastLife') el.remove();
+  });
+}
+
+// ── Modal ──
+function openModal() {
+  populateModalFields();
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').style.display = 'none';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+
+function populateModalFields() {
+  if (mode === 'ok') {
+    document.getElementById('leaderWords').value = okLeaderWords.join('\n');
+    document.getElementById('colleagueWords').value = okColleagueWords.join('\n');
+  } else {
+    document.getElementById('leaderWords').value = noLeaderWords.join('\n');
+    document.getElementById('colleagueWords').value = noColleagueWords.join('\n');
+  }
+}
+
+function saveWords() {
+  const rawLeader = document.getElementById('leaderWords').value;
+  const rawColleague = document.getElementById('colleagueWords').value;
+
+  const leaderArr = rawLeader.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+  const colleagueArr = rawColleague.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+  if (mode === 'ok') {
+    okLeaderWords = leaderArr.length > 0 ? leaderArr : [...DEFAULT_OK_LEADER];
+    okColleagueWords = colleagueArr.length > 0 ? colleagueArr : [...DEFAULT_OK_COLLEAGUE];
+  } else {
+    noLeaderWords = leaderArr.length > 0 ? leaderArr : [...DEFAULT_NO_LEADER];
+    noColleagueWords = colleagueArr.length > 0 ? colleagueArr : [...DEFAULT_NO_COLLEAGUE];
+  }
+
+  persistAll();
+  closeModal();
+  showToast('✓ 已保存');
+}
+
+function resetWords() {
+  if (!confirm('确定恢复当前模式（' + (mode === 'ok' ? 'OK' : '😈') + '）的默认词库？编辑的内容将被覆盖。')) return;
+
+  if (mode === 'ok') {
+    okLeaderWords = [...DEFAULT_OK_LEADER];
+    okColleagueWords = [...DEFAULT_OK_COLLEAGUE];
+  } else {
+    noLeaderWords = [...DEFAULT_NO_LEADER];
+    noColleagueWords = [...DEFAULT_NO_COLLEAGUE];
+  }
+
+  persistAll();
+  populateModalFields();
+  showToast('✓ 已恢复默认词库');
+}
+
+// ── Utilities ──
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function escapeAttr(str) {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── Init ──
+loadAll();
+fetchCommunityWords();
+</script>
+
+</body>
+</html>
