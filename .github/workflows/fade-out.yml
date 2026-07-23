@@ -5,21 +5,21 @@ on:
     - cron: '0 18 * * *'  # 每天 UTC 18:00（北京时间 02:00）
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   fade-out:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: 统计投票并衰减
         uses: actions/github-script@v7
+        env:
+          GIST_ID: fb0670351105898b40e2d23a0dae3cd7
         with:
           script: |
-            const fs = require('fs');
-            const db = JSON.parse(fs.readFileSync('community.json', 'utf8'));
+            const GIST_ID = process.env.GIST_ID;
+            const gist = await github.rest.gists.get({ gist_id: GIST_ID });
+            const db = JSON.parse(gist.data.files['community.json'].content);
 
             for (const mode of ['ok', 'no']) {
               for (const category of ['leader', 'colleague']) {
@@ -50,14 +50,9 @@ jobs:
               }
             }
 
-            fs.writeFileSync('community.json', JSON.stringify(db, null, 2) + '\n');
-
-      - name: 提交变更
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add community.json
-          if ! git diff --cached --quiet; then
-            git commit -m "chore: 社区词衰减"
-            git push
-          fi
+            const content = JSON.stringify(db, null, 2) + '\n';
+            await github.rest.gists.update({
+              gist_id: GIST_ID,
+              files: { 'community.json': { content } }
+            });
+            core.info('衰减完成');
