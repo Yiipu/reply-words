@@ -94,6 +94,56 @@ jobs:
               return;
             }
 
+            // 查重：已完成（discussion 不为 null）则跳过，仅有占位则继续
+            let hasPlaceholder = false;
+            {
+              const gist = await gistOctokit.rest.gists.get({ gist_id: GIST_ID });
+              const db = JSON.parse(gist.data.files['community.json'].content);
+              const existing = db[mode][cat].find(w => w.text === text);
+              if (existing) {
+                if (existing.discussion != null) {
+                  core.info('该词条已收录，跳过');
+                  return;
+                }
+                hasPlaceholder = true;
+                core.info('检测到未完成的占位，跳过写入直接创建 Discussion');
+              }
+            }
+
+            // 先写 Gist 占位，保证重跑时查重可命中
+            if (!hasPlaceholder) {
+              const MAX_RETRIES = 3;
+              let placeholderWritten = false;
+              for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+                const gist = await gistOctokit.rest.gists.get({ gist_id: GIST_ID });
+                const db = JSON.parse(gist.data.files['community.json'].content);
+                const gistUpdatedAt = new Date(gist.data.updated_at).getTime();
+
+                db[mode][cat].push({ text, discussion: null });
+                const content = JSON.stringify(db, null, 2) + '\n';
+
+                const gistCheck = await gistOctokit.rest.gists.get({ gist_id: GIST_ID });
+                const checkTime = new Date(gistCheck.data.updated_at).getTime();
+                if (checkTime !== gistUpdatedAt) {
+                  core.warning(`Gist 在投稿期间被修改，第 ${attempt + 1} 次重试中...`);
+                  continue;
+                }
+
+                await gistOctokit.rest.gists.update({
+                  gist_id: GIST_ID,
+                  files: { 'community.json': { content } },
+                });
+                placeholderWritten = true;
+                core.info(`Gist 占位写入成功（第 ${attempt + 1} 次尝试）`);
+                break;
+              }
+              if (!placeholderWritten) {
+                core.setFailed('Gist 占位写入失败，重试次数耗尽');
+                return;
+              }
+            }
+
+            // 创建 Discussion
             const result = await github.graphql(
               `mutation($repoId: ID!, $catId: ID!, $title: String!, $body: String!) {
                 createDiscussion(input: {repositoryId: $repoId, categoryId: $catId, title: $title, body: $body}) {
@@ -109,57 +159,30 @@ jobs:
             );
             const discussionNumber = result.createDiscussion.discussion.number;
 
-            const MAX_RETRIES = 3;
-            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-              const gist = await gistOctokit.rest.gists.get({ gist_id: GIST_ID });
-              const db = JSON.parse(gist.data.files['community.json'].content);
-              const gistUpdatedAt = new Date(gist.data.updated_at).getTime();
-
-              if (db[mode][cat].some(w => w.text === text)) {
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issueNumber,
-                  body: '❌ 该词条已存在',
-                });
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issueNumber,
-                  title: `[投稿] ${text}`,
-                  state: 'closed',
-                });
-                return;
-              }
-
-              db[mode][cat].push({ text, discussion: discussionNumber });
-              const content = JSON.stringify(db, null, 2) + '\n';
-
-              const gistCheck = await gistOctokit.rest.gists.get({ gist_id: GIST_ID });
-              const checkTime = new Date(gistCheck.data.updated_at).getTime();
-              if (checkTime !== gistUpdatedAt) {
-                core.warning(`Gist 在投稿期间被修改，第 ${attempt + 1} 次重试中...`);
-                continue;
-              }
-
+            // 回填 discussion 编号（best-effort）
+            try {
+              const finalGist = await gistOctokit.rest.gists.get({ gist_id: GIST_ID });
+              const finalDb = JSON.parse(finalGist.data.files['community.json'].content);
+              const entry = finalDb[mode][cat].find(w => w.text === text && w.discussion === null);
+              if (entry) entry.discussion = discussionNumber;
               await gistOctokit.rest.gists.update({
                 gist_id: GIST_ID,
-                files: { 'community.json': { content } },
+                files: { 'community.json': { content: JSON.stringify(finalDb, null, 2) + '\n' } },
               });
-
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                body: `✅ 投稿已通过，已收录：https://github.com/${context.repo.owner}/${context.repo.repo}/discussions/${discussionNumber}`,
-              });
-              await github.rest.issues.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                title: `[投稿] ${text}`,
-                state: 'closed',
-              });
-              return;
+            } catch (e) {
+              core.warning(`回填 discussion 编号失败：${e.message}`);
             }
-            core.setFailed('重试次数耗尽，Gist 竞态条件未解决');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `✅ 投稿已通过，已收录：https://github.com/${context.repo.owner}/${context.repo.repo}/discussions/${discussionNumber}`,
+            });
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              title: `[投稿] ${text}`,
+              state: 'closed',
+            });
