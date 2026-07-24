@@ -6,7 +6,7 @@
 
 - 本地开发：直接用浏览器打开 `index.html`，或 `python3 -m http.server <port>`
 - 无构建步骤、无依赖（纯静态 HTML）
-- 部署：GitHub Pages，`master` 分支根目录 → https://yiipu.github.io/reply-words/
+- 部署：`deploy.yml`（仅 `index.html` 变更时触发 + `workflow_dispatch` 手动）→ GitHub Pages（Source 设为 "GitHub Actions"）→ https://yiipu.github.io/reply-words/
 
 ## 架构
 
