@@ -1173,21 +1173,49 @@
       };
       let communityMixRate = 0.2; // 20% chance to show community word (configurable in modal)
       let communityState = 'loading'; // 'loading' | 'loaded' | 'failed'
+      const COMMUNITY_CACHE_KEY = 'reply-words-community-cache';
+      const COMMUNITY_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
       async function fetchCommunityWords() {
         try {
           const resp = await fetch(COMMUNITY_JSON, { cache: 'no-cache' });
           if (!resp.ok) throw new Error('HTTP ' + resp.status);
-          communityWords = await resp.json();
+          const data = await resp.json();
+          communityWords = data;
           communityState = 'loaded';
-        } catch (e) {
-          communityState = 'failed';
-          if (communityMixRate > 0) {
-            showToast(
-              '⚠ 社区词库加载失败，当前混入比例 ' +
-                Math.round(communityMixRate * 100) +
-                '%',
+          try {
+            localStorage.setItem(
+              COMMUNITY_CACHE_KEY,
+              JSON.stringify({ data, timestamp: Date.now() }),
             );
+          } catch (_) {
+            /* storage full — ignore */
+          }
+        } catch (e) {
+          let cached = false;
+          try {
+            const raw = localStorage.getItem(COMMUNITY_CACHE_KEY);
+            if (raw) {
+              const cache = JSON.parse(raw);
+              if (Date.now() - cache.timestamp < COMMUNITY_CACHE_TTL) {
+                communityWords = cache.data;
+                communityState = 'loaded';
+                cached = true;
+                showToast('⚠ 社区词库加载失败，使用缓存数据');
+              }
+            }
+          } catch (_) {
+            /* corrupted cache — ignore */
+          }
+          if (!cached) {
+            communityState = 'failed';
+            if (communityMixRate > 0) {
+              showToast(
+                '⚠ 社区词库加载失败，当前混入比例 ' +
+                  Math.round(communityMixRate * 100) +
+                  '%',
+              );
+            }
           }
         }
         restoreWordState();
