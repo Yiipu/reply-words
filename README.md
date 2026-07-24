@@ -8,14 +8,11 @@
 
 ```mermaid
 flowchart LR
-    A[用户提交 Issue Form] --> B{submit.yml 硬校验}
-    B -->|不通过| C[❌ 评论错误原因 + 关闭 Issue]
-    B -->|通过| D[GraphQL 创建 Discussion，并写入 community.json]
-    D --> E[✅ 评论收录链接 + 关闭 Issue]
-    E --> F[前端 fetch community.json，按概率混入展示，加载 giscus 投票组件]
-    F --> G[用户在 Discussion 中\n用 👍/👎 投票]
-    G --> H{fade-out.yml 定期检查：\n 投票数量≥10 且 👎>👍×1.5 }
-    H -->|Y| L[🗑️ 从 community.json 移除]
-    H -->|N| M[保留词条]
-    M --> G
+    A[Issue Form 投稿] --> B{submit.yml\n校验 + 查重}
+    B -->|驳回| C[关闭 Issue]
+    B -->|通过| D[创建 Discussion + 入库]
+    D --> E[前端展示 + giscus 投票]
+    E --> F{fade-out 衰减}
+    F -->|保留| E
+    F -->|淘汰| G[移除 + 关闭 Discussion]
 ```

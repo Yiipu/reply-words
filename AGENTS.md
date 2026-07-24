@@ -27,9 +27,9 @@
 
 ## 数据流（社区词生命周期）
 
-1. **投稿**：用户 → Issue Form（`submit-word.yml`）→ `submit.yml` 硬校验（长度≤50/类别/模式/查重）→ GraphQL 创建 Discussion → 写入 Gist `community.json`
-2. **展示**：前端 `fetch(community.json)` → 按 `communityMixRate` 概率混入 → 展示时懒加载 giscus 投票
-3. **衰减**：`fade-out.yml`（每日 UTC 18:00）→ 读取各 Discussion 的 👍/👎 计数 → `total ≥ 10 && 👎 > 👍 × 1.5` 则移除
+1. **投稿**：用户 → Issue Form（`submit-word.yml`）→ `submit.yml` 校验（长度≤50/类别/模式/查重）→ GraphQL 创建 Discussion → Gist 乐观锁写入 `community.json`（失败重试 3 次）
+2. **展示**：前端 `fetch(community.json)`（成功写入 `localStorage` 缓存 5min TTL，失败时降级）→ 按 `communityMixRate` 概率混入 → 懒加载 giscus 投票
+3. **衰减**：`fade-out.yml`（每日 UTC 18:00）→ 批量 GraphQL 拉取 Discussion 👍/👎 → `total ≥ 10 && 👎 > 👍 × 1.5` 则移除并关闭 Discussion → Gist 乐观锁写回
 
 ## 硬编码常量（改仓库名/账号时需同步）
 
@@ -38,8 +38,3 @@
 - repositoryId: `R_kgDOTg3sHQ`
 - Discussion category: `Announcements` / `DIC_kwDOTg3sHc4DBxyQ`
 - Gist ID: `fb0670351105898b40e2d23a0dae3cd7`
-
-## 风格
-
-- commit message 用中文、加前缀
-- 社区词库数据源为 Gist（非仓库文件），`community.json` 在 `.gitignore` 中
