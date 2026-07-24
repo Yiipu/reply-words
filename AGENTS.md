@@ -38,3 +38,11 @@
 - repositoryId: `R_kgDOTg3sHQ`
 - Discussion category: `Announcements` / `DIC_kwDOTg3sHc4DBxyQ`
 - Gist ID: `fb0670351105898b40e2d23a0dae3cd7`
+
+Workflows 中 `REPO_ID` / `CATEGORY_ID` 由运行时 GraphQL 动态获取。
+
+## Secrets
+
+| Secret | 用途 |
+|---|---|
+| `GIST_TOKEN` | Fine-grained PAT，需 Gist 读写权限。`submit.yml` / `fade-out.yml` 用此 token 访问社区词库 Gist |
