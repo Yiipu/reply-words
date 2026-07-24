@@ -3,6 +3,11 @@ name: 投稿处理
 on:
   issues:
     types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: '要重跑的 Issue 编号'
+        required: true
 
 permissions:
   discussions: write
@@ -11,19 +16,34 @@ permissions:
 jobs:
   submit:
     if: |
-      contains(github.event.issue.labels.*.name, 'word-submission') &&
-      github.event.issue.state == 'open'
+      github.event_name == 'workflow_dispatch' ||
+      (contains(github.event.issue.labels.*.name, 'word-submission') &&
+       github.event.issue.state == 'open')
     runs-on: ubuntu-latest
     steps:
       - name: 解析校验并写入
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
           GIST_ID: fb0670351105898b40e2d23a0dae3cd7
         with:
           script: |
             const GIST_ID = process.env.GIST_ID;
-            const gistOctokit = github.getOctokit(process.env.GIST_TOKEN);
+            const gistOctokit = getOctokit(process.env.GIST_TOKEN);
+
+            let issueNumber, body;
+            if (context.eventName === 'workflow_dispatch') {
+              issueNumber = parseInt(context.payload.inputs.issue_number, 10);
+              const { data: issue } = await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+              });
+              body = issue.body || '';
+            } else {
+              issueNumber = context.issue.number;
+              body = context.payload.issue.body || '';
+            }
 
             const { repository } = await github.graphql(
               `query($owner: String!, $repo: String!) {
@@ -41,7 +61,6 @@ jobs:
               return;
             }
             const CATEGORY_ID = category.id;
-            const body = context.payload.issue.body || '';
 
             function field(label) {
               const re = new RegExp('### ' + label + '\\s*\\n\\s*\\n([^\\n]*)');
@@ -50,26 +69,26 @@ jobs:
             }
 
             const text = field('词条内容');
-            const category = field('类别');
+            const cat = field('类别');
             const mode = field('模式');
 
             const errors = [];
             if (!text) errors.push('内容不能为空');
             if (text.length > 50) errors.push('词条长度不能超过50个字符');
-            if (!['leader', 'colleague'].includes(category)) errors.push('类别无效');
+            if (!['leader', 'colleague'].includes(cat)) errors.push('类别无效');
             if (!['ok', 'no'].includes(mode)) errors.push('模式无效');
 
             if (errors.length > 0) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: issueNumber,
                 body: '❌ 投稿未通过：\n' + errors.map(e => '- ' + e).join('\n'),
               });
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: issueNumber,
                 state: 'closed',
               });
               return;
@@ -85,7 +104,7 @@ jobs:
                 repoId: REPO_ID,
                 catId: CATEGORY_ID,
                 title: text,
-                body: `来自投稿 #${context.issue.number}\n\n类别：${category}　模式：${mode}\n\n给这条回复语投票 👍/👎`,
+                body: `来自投稿 #${issueNumber}\n\n类别：${cat}　模式：${mode}\n\n给这条回复语投票 👍/👎`,
               }
             );
             const discussionNumber = result.createDiscussion.discussion.number;
@@ -96,24 +115,24 @@ jobs:
               const db = JSON.parse(gist.data.files['community.json'].content);
               const gistUpdatedAt = new Date(gist.data.updated_at).getTime();
 
-              if (db[mode][category].some(w => w.text === text)) {
+              if (db[mode][cat].some(w => w.text === text)) {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  issue_number: context.issue.number,
+                  issue_number: issueNumber,
                   body: '❌ 该词条已存在',
                 });
                 await github.rest.issues.update({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  issue_number: context.issue.number,
+                  issue_number: issueNumber,
                   title: `[投稿] ${text}`,
                   state: 'closed',
                 });
                 return;
               }
 
-              db[mode][category].push({ text, discussion: discussionNumber });
+              db[mode][cat].push({ text, discussion: discussionNumber });
               const content = JSON.stringify(db, null, 2) + '\n';
 
               const gistCheck = await gistOctokit.rest.gists.get({ gist_id: GIST_ID });
@@ -131,13 +150,13 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: issueNumber,
                 body: `✅ 投稿已通过，已收录：https://github.com/${context.repo.owner}/${context.repo.repo}/discussions/${discussionNumber}`,
               });
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: issueNumber,
                 title: `[投稿] ${text}`,
                 state: 'closed',
               });

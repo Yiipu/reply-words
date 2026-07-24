@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 统计投票并衰减
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
           GIST_ID: fb0670351105898b40e2d23a0dae3cd7
         with:
           script: |
             const GIST_ID = process.env.GIST_ID;
-            const gistOctokit = github.getOctokit(process.env.GIST_TOKEN);
+            const gistOctokit = getOctokit(process.env.GIST_TOKEN);
             const MAX_RETRIES = 3;
 
             const { repository } = await github.graphql(
