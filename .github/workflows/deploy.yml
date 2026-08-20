@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - 'index.html'
+      - 'style.css'
   workflow_dispatch:
 
 permissions:

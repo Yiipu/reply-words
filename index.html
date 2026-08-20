@@ -1,813 +1,16 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>词库</title>
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      :root {
-        --bg: #eef7f2;
-        --card-bg: #ffffff;
-        --text: #1a3c30;
-        --text-secondary: #5a7d70;
-        --border: #c8e0d4;
-        --leader-bg: #0d6b4f;
-        --leader-hover: #0a5a42;
-        --colleague-bg: #20b873;
-        --colleague-hover: #1a9e60;
-        --copy-bg: #e4f2ea;
-        --copy-hover: #d4e8de;
-        --toast-bg: #0d6b4f;
-        --toast-text: #fff;
-        --radius: 12px;
-        --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-        --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
-        --font:
-          -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-          'Microsoft YaHei', 'Helvetica Neue', sans-serif;
-        --mode-accent: #0d6b4f;
-        --bg-tertiary: #e8ece9;
-      }
-
-      /* 😈 mode overrides */
-      body.no-mode {
-        --bg: #121212;
-        --card-bg: #1e1e1e;
-        --text: #ede4d3;
-        --text-secondary: #9a9080;
-        --border: #333333;
-        --leader-bg: #e67e22;
-        --leader-hover: #d35400;
-        --colleague-bg: #f39c12;
-        --colleague-hover: #e67e22;
-        --copy-bg: #2a2a2a;
-        --copy-hover: #383838;
-        --toast-bg: #e67e22;
-        --toast-text: #fff;
-        --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-        --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5);
-        --mode-accent: #e67e22;
-        --bg-tertiary: #2a2a2a;
-      }
-
-      body {
-        font-family: var(--font);
-        background: var(--bg);
-        color: var(--text);
-        min-height: 100dvh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        -webkit-font-smoothing: antialiased;
-        transition:
-          background 0.3s ease,
-          color 0.3s ease;
-      }
-
-      .container {
-        width: 100%;
-        max-width: 420px;
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-      }
-
-      /* Header */
-      .header {
-        text-align: center;
-        position: relative;
-      }
-      .header h1 {
-        font-size: 22px;
-        font-weight: 600;
-        color: var(--text);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-      }
-      .header h1 .emoji {
-        font-size: 26px;
-      }
-      .header h1 .brand {
-        font-weight: 800;
-        font-size: 26px;
-        letter-spacing: 1px;
-        color: var(--mode-accent);
-        transition: color 0.3s ease;
-      }
-      .header h1 .cn {
-        font-weight: 500;
-        margin-left: 2px;
-      }
-      .header p {
-        font-size: 13px;
-        color: var(--text-secondary);
-        margin-top: 4px;
-      }
-
-      /* Mode toggle — segmented control */
-      .mode-segment {
-        display: flex;
-        background: var(--copy-bg);
-        border-radius: 8px;
-        padding: 3px;
-        gap: 0;
-      }
-      .mode-seg-btn {
-        flex: 1;
-        padding: 7px 0;
-        border: none;
-        background: transparent;
-        color: var(--text-secondary);
-        font-size: 14px;
-        font-weight: 600;
-        font-family: var(--font);
-        cursor: pointer;
-        border-radius: 6px;
-        transition:
-          background 0.2s ease,
-          color 0.2s ease,
-          box-shadow 0.2s ease;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-        text-align: center;
-      }
-      .mode-seg-btn.active {
-        background: var(--card-bg);
-        color: var(--text);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      }
-      .mode-seg-btn:focus-visible {
-        outline: 2px solid #3498db;
-        outline-offset: -2px;
-      }
-
-      /* Buttons row */
-      .btn-row {
-        display: flex;
-        gap: 12px;
-      }
-      .btn-category {
-        flex: 1;
-        padding: 14px 0;
-        border: none;
-        border-radius: var(--radius);
-        font-size: 16px;
-        font-weight: 600;
-        font-family: var(--font);
-        color: #fff;
-        cursor: pointer;
-        transition:
-          transform 0.12s ease,
-          box-shadow 0.12s ease,
-          background 0.3s ease;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-        position: relative;
-        overflow: hidden;
-      }
-      .btn-category:active {
-        transform: scale(0.97);
-      }
-      .btn-category:focus-visible {
-        outline: 2px solid #3498db;
-        outline-offset: 2px;
-      }
-      .btn-leader {
-        background: var(--leader-bg);
-      }
-      .btn-leader:hover {
-        background: var(--leader-hover);
-        box-shadow: var(--shadow-lg);
-      }
-      .btn-colleague {
-        background: var(--colleague-bg);
-      }
-      .btn-colleague:hover {
-        background: var(--colleague-hover);
-        box-shadow: var(--shadow-lg);
-      }
-
-      /* Word card */
-      .word-card {
-        background: var(--card-bg);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        padding: 28px 24px 24px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        height: 170px;
-        justify-content: center;
-        transition:
-          box-shadow 0.2s ease,
-          background 0.3s ease;
-      }
-      .word-card.has-word {
-        box-shadow: var(--shadow-lg);
-      }
-      .word-label {
-        font-size: 11px;
-        font-weight: 600;
-        padding: 3px 10px;
-        border-radius: 10px;
-        letter-spacing: 0.5px;
-        color: #fff;
-        display: inline-block;
-      }
-      .word-label-leader {
-        background: var(--leader-bg);
-      }
-      .word-label-colleague {
-        background: var(--colleague-bg);
-      }
-      .word-label-community {
-        background: #8e44ad;
-        font-size: 10px;
-      }
-      .word-display {
-        font-size: 26px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        text-align: center;
-        word-break: break-all;
-        line-height: 1.4;
-        animation: wordIn 0.25s ease;
-      }
-      @keyframes wordIn {
-        from {
-          opacity: 0;
-          transform: translateY(6px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      .word-placeholder {
-        font-size: 15px;
-        color: #bdc3c7;
-        font-weight: 400;
-      }
-
-      /* Copy button */
-      .btn-copy {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 18px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--copy-bg);
-        color: var(--text);
-        font-size: 14px;
-        font-family: var(--font);
-        cursor: pointer;
-        transition: background 0.15s ease;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .btn-copy:hover {
-        background: var(--copy-hover);
-      }
-      .btn-copy:active {
-        transform: scale(0.97);
-      }
-      .btn-copy:focus-visible {
-        outline: 2px solid #3498db;
-        outline-offset: 2px;
-      }
-      .btn-copy svg {
-        width: 16px;
-        height: 16px;
-        flex-shrink: 0;
-      }
-
-      /* Settings gear button */
-      .btn-settings {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 32px;
-        height: 32px;
-        border: none;
-        background: transparent;
-        color: var(--text-secondary);
-        cursor: pointer;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        transition:
-          color 0.15s ease,
-          background 0.15s ease;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .btn-settings:hover {
-        color: var(--text);
-        background: rgba(128, 128, 128, 0.1);
-      }
-      .btn-settings svg {
-        width: 18px;
-        height: 18px;
-        stroke: currentColor;
-      }
-
-      /* Modal */
-      .modal-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 900;
-        padding: 20px;
-        animation: fadeIn 0.2s ease;
-      }
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-      .modal {
-        background: var(--card-bg);
-        border-radius: var(--radius);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-        width: 100%;
-        max-width: 560px;
-        max-height: 80vh;
-        overflow-y: auto;
-        animation: modalIn 0.25s ease;
-      }
-      @keyframes modalIn {
-        from {
-          opacity: 0;
-          transform: scale(0.95) translateY(8px);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1) translateY(0);
-        }
-      }
-      .modal-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 18px 20px 0;
-        margin-bottom: 8px;
-        gap: 12px;
-      }
-      .modal-header h2 {
-        font-size: 17px;
-        font-weight: 600;
-        flex-shrink: 0;
-      }
-      .btn-close {
-        width: 32px;
-        height: 32px;
-        border: none;
-        background: transparent;
-        font-size: 20px;
-        color: var(--text-secondary);
-        cursor: pointer;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition:
-          background 0.15s ease,
-          color 0.15s ease;
-      }
-      .btn-close:hover {
-        background: rgba(128, 128, 128, 0.15);
-        color: var(--text);
-      }
-      .modal-body {
-        padding: 16px 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-      }
-
-      /* Page-level tabs */
-      .modal-page-tabs {
-        margin: 0 20px;
-      }
-      .modal-page-tabs .modal-tab {
-        padding: 8px 16px;
-        font-size: 14px;
-      }
-
-      /* Edit section */
-      .edit-section {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      .edit-section + .edit-section {
-        margin-top: 16px;
-      }
-      .edit-section-label {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text);
-      }
-      .community-desc {
-        font-size: 12px;
-        color: var(--text-secondary);
-        line-height: 1.5;
-      }
-      .edit-page {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-      .link-submit {
-        font-size: 12px;
-        color: var(--text-secondary);
-        text-decoration: none;
-      }
-      .link-submit:hover {
-        color: var(--text);
-        text-decoration: underline;
-      }
-
-      /* Toggle switch */
-      .toggle-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .toggle-label {
-        font-size: 13px;
-        color: var(--text);
-      }
-      .toggle-switch {
-        position: relative;
-        width: 44px;
-        height: 24px;
-        flex-shrink: 0;
-      }
-      .toggle-switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-      .toggle-slider {
-        position: absolute;
-        inset: 0;
-        background: var(--border);
-        border-radius: 12px;
-        cursor: pointer;
-        transition: background 0.2s;
-      }
-      .toggle-slider::before {
-        content: '';
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        left: 3px;
-        bottom: 3px;
-        background: #fff;
-        border-radius: 50%;
-        transition: transform 0.2s;
-      }
-      .toggle-switch input:checked + .toggle-slider {
-        background: #4a9eff;
-      }
-      .toggle-switch input:checked + .toggle-slider::before {
-        transform: translateX(20px);
-      }
-
-      /* Tabs toolbar */
-      .modal-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .modal-toolbar .btn-reset {
-        margin-left: auto;
-        padding: 6px 12px;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: transparent;
-        color: var(--text-secondary);
-        font-size: 12px;
-        font-family: var(--font);
-        cursor: pointer;
-        transition:
-          color 0.15s ease,
-          border-color 0.15s ease;
-        flex-shrink: 0;
-      }
-      .modal-toolbar .btn-reset:hover {
-        color: #e74c3c;
-        border-color: #e74c3c;
-      }
-      .modal-mode-segment {
-        display: flex;
-        background: var(--copy-bg);
-        border-radius: 8px;
-        padding: 2px;
-        gap: 0;
-        flex-shrink: 0;
-      }
-      .modal-mode-btn {
-        padding: 6px 12px;
-        border: none;
-        background: transparent;
-        color: var(--text-secondary);
-        font-size: 13px;
-        font-weight: 600;
-        font-family: var(--font);
-        cursor: pointer;
-        border-radius: 6px;
-        transition:
-          background 0.2s ease,
-          color 0.2s ease,
-          box-shadow 0.2s ease;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-        text-align: center;
-      }
-      .modal-mode-btn.active {
-        background: var(--card-bg);
-        color: var(--text);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      }
-      .modal-tabs {
-        display: flex;
-        background: var(--copy-bg);
-        border-radius: 8px;
-        padding: 2px;
-        gap: 0;
-      }
-      .modal-tab {
-        padding: 6px 12px;
-        border: none;
-        background: transparent;
-        color: var(--text-secondary);
-        font-size: 13px;
-        font-weight: 600;
-        font-family: var(--font);
-        cursor: pointer;
-        border-radius: 6px;
-        border-bottom: none;
-        transition:
-          background 0.2s ease,
-          color 0.2s ease,
-          box-shadow 0.2s ease;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .modal-tab:hover {
-        color: var(--text);
-      }
-      .modal-tab.active {
-        color: var(--text);
-        background: var(--card-bg);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        border-bottom-color: transparent;
-        font-weight: 600;
-      }
-
-      /* Tab panels */
-      .tab-panel textarea {
-        width: 100%;
-        height: 160px;
-        padding: 10px 12px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        font-size: 14px;
-        font-family: var(--font);
-        line-height: 1.8;
-        resize: vertical;
-        color: var(--text);
-        background: #fafbfc;
-        transition: border-color 0.15s ease;
-      }
-      body.no-mode .tab-panel textarea {
-        background: #2a2a2a;
-        color: #ede4d3;
-      }
-      .tab-panel textarea:focus {
-        outline: none;
-        border-color: #3498db;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-      }
-      .word-count {
-        text-align: right;
-        font-size: 11px;
-        color: var(--text-secondary);
-        margin-top: 4px;
-      }
-
-      /* Mix rate */
-      .mix-rate-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-      .mix-rate-row input[type='range'] {
-        flex: 1;
-        accent-color: var(--mode-accent);
-        height: 6px;
-      }
-      .mix-rate-row input[type='number'] {
-        width: 56px;
-        padding: 5px 6px;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        font-size: 14px;
-        font-family: var(--font);
-        text-align: center;
-        color: var(--text);
-        background: #fafbfc;
-      }
-      body.no-mode .mix-rate-row input[type='number'] {
-        background: #2a2a2a;
-        color: #ede4d3;
-      }
-      .mix-rate-row input[type='number']:focus {
-        outline: none;
-        border-color: #3498db;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-      }
-      .mix-rate-hint {
-        font-size: 11px;
-        color: var(--text-secondary);
-      }
-
-      /* Footer */
-      .modal-footer {
-        padding: 0 20px 18px;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        gap: 12px;
-      }
-      .btn-save {
-        flex: 1;
-        padding: 10px 0;
-        border: none;
-        border-radius: 8px;
-        background: #3498db;
-        color: #fff;
-        font-size: 15px;
-        font-weight: 600;
-        font-family: var(--font);
-        cursor: pointer;
-        transition: background 0.15s ease;
-      }
-      .btn-save:hover {
-        background: #2980b9;
-      }
-      .btn-save:active {
-        transform: scale(0.98);
-      }
-      .btn-footer-close {
-        flex: 1;
-        padding: 10px 0;
-        border: none;
-        border-radius: 8px;
-        background: var(--bg-tertiary);
-        color: var(--text-secondary);
-        font-size: 15px;
-        font-weight: 600;
-        font-family: var(--font);
-        cursor: pointer;
-        transition: background 0.15s ease;
-      }
-      .btn-footer-close:hover {
-        background: var(--border);
-      }
-      .btn-footer-close:active {
-        transform: scale(0.98);
-      }
-
-      /* Community vote block */
-      .community-vote-block {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 24px;
-      }
-      .community-vote-hint {
-        font-size: 12px;
-        color: var(--text-secondary);
-        text-align: center;
-      }
-      .community-vote-container {
-        width: 100%;
-        min-height: 48px;
-      }
-      .community-vote-container iframe {
-        width: 100% !important;
-      }
-
-      /* Toast container */
-      .toast-container {
-        position: fixed;
-        top: 16px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        z-index: 1000;
-        pointer-events: none;
-      }
-      .toast {
-        background: var(--toast-bg);
-        color: var(--toast-text);
-        padding: 8px 20px;
-        border-radius: 16px;
-        font-size: 13px;
-        font-weight: 500;
-        font-family: var(--font);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        white-space: nowrap;
-        max-height: 40px;
-        margin-bottom: 8px;
-        overflow: hidden;
-        animation: toastLife 1.3s ease forwards;
-      }
-      @keyframes toastLife {
-        0% {
-          opacity: 0;
-          transform: translateY(-6px);
-          max-height: 0;
-          margin-bottom: 0;
-          padding-top: 0;
-          padding-bottom: 0;
-        }
-        6% {
-          opacity: 1;
-          transform: translateY(0);
-          max-height: 40px;
-          margin-bottom: 8px;
-          padding-top: 8px;
-          padding-bottom: 8px;
-        }
-        72% {
-          opacity: 1;
-          transform: translateY(0);
-          max-height: 40px;
-          margin-bottom: 8px;
-          padding-top: 8px;
-          padding-bottom: 8px;
-        }
-        100% {
-          opacity: 0;
-          transform: translateY(0);
-          max-height: 0;
-          margin-bottom: 0;
-          padding-top: 0;
-          padding-bottom: 0;
-        }
-      }
-      @media (max-width: 540px) {
-        .modal-mode-btn {
-          padding: 5px 8px;
-          font-size: 12px;
-        }
-        .modal-toolbar .modal-tab {
-          padding: 5px 8px;
-          font-size: 12px;
-        }
-        .modal-toolbar .btn-reset {
-          padding: 5px 8px;
-          font-size: 12px;
-        }
-        .reset-text {
-          display: none;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="container">
       <div class="header">
         <h1>
-          <span class="emoji" id="headerEmoji">👌</span
-          ><span class="brand" id="headerBrand">OK</span
+          <span class="brand" id="headerBrand">OK</span
           ><span class="cn">词库</span>
         </h1>
         <p id="headerSub">好的好的，收到收到</p>
@@ -834,15 +37,15 @@
 
       <div class="mode-segment">
         <button class="mode-seg-btn active" id="okBtn" onclick="setMode('ok')">
-          👌 OK
+          OK
         </button>
         <button class="mode-seg-btn" id="noBtn" onclick="setMode('no')">
-          😈 NO
+          NO
         </button>
       </div>
 
       <div class="word-card" id="wordCard">
-        <div class="word-placeholder">👇 点击下方按钮</div>
+        <div class="word-placeholder">点击下方按钮</div>
       </div>
 
       <div class="btn-row">
@@ -865,7 +68,7 @@
         id="communityVoteBlock"
         style="display: none"
       >
-        <div class="community-vote-hint">喜欢这个词吗？点 👍 或 👎 来投票</div>
+        <div class="community-vote-hint">喜欢这个词吗？投赞成或反对票</div>
         <div class="community-vote-container" id="communityVoteContainer"></div>
       </div>
     </div>
@@ -887,21 +90,21 @@
             id="pageLocal"
             onclick="dialogManager.switchPage('local')"
           >
-            📝 本地词库
+            本地词库
           </button>
           <button
             class="modal-tab"
             id="pageCommunity"
             onclick="dialogManager.switchPage('community')"
           >
-            🌐 社区词库
+            社区词库
           </button>
           <button
             class="modal-tab"
             id="pageGeneral"
             onclick="dialogManager.switchPage('general')"
           >
-            ⚙️ 通用
+            通用
           </button>
         </div>
         <div class="modal-body">
@@ -913,14 +116,14 @@
                   id="modalOkBtn"
                   onclick="dialogManager.switchDialogMode('ok')"
                 >
-                  👌 OK
+                  OK
                 </button>
                 <button
                   class="modal-mode-btn"
                   id="modalNoBtn"
                   onclick="dialogManager.switchDialogMode('no')"
                 >
-                  😈 NO
+                  NO
                 </button>
               </div>
               <div class="modal-tabs">
@@ -929,18 +132,29 @@
                   id="tabLeader"
                   onclick="dialogManager.switchTab('leader')"
                 >
-                  👔 对领导
+                  对领导
                 </button>
                 <button
                   class="modal-tab"
                   id="tabColleague"
                   onclick="dialogManager.switchTab('colleague')"
                 >
-                  👥 对同事
+                  对同事
                 </button>
               </div>
               <button class="btn-reset" onclick="dialogManager.reset()">
-                ↺ <span class="reset-text">恢复默认</span>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                </svg>
+                <span class="reset-text">恢复默认</span>
               </button>
             </div>
             <div class="tab-panel" id="leaderPanel">
@@ -1201,7 +415,7 @@
                 communityWords = cache.data;
                 communityState = 'loaded';
                 cached = true;
-                showToast('⚠ 社区词库加载失败，使用缓存数据');
+                showToast('社区词库加载失败，使用缓存数据');
               }
             }
           } catch (_) {
@@ -1211,7 +425,7 @@
             communityState = 'failed';
             if (communityMixRate > 0) {
               showToast(
-                '⚠ 社区词库加载失败，当前混入比例 ' +
+                '社区词库加载失败，当前混入比例 ' +
                   Math.round(communityMixRate * 100) +
                   '%',
               );
@@ -1256,7 +470,7 @@
         script.setAttribute('data-lang', 'zh-CN');
         script.setAttribute(
           'data-theme',
-          document.body.classList.contains('no-mode') ? 'dark' : 'light',
+          document.documentElement.classList.contains('dark') ? 'dark' : 'light',
         );
         container.appendChild(script);
       }
@@ -1331,7 +545,7 @@
           sessionStorage.removeItem('reply-words-current');
           if (state.type === 'community') {
             if (communityState === 'failed') {
-              showToast('⚠ 社区词库加载失败，无法恢复上次的词条');
+              showToast('社区词库加载失败，无法恢复上次的词条');
               return;
             }
             displayCommunityWord(state.discussion, state.word, state.category);
@@ -1352,16 +566,17 @@
         // Clear displayed word when switching mode
         const card = document.getElementById('wordCard');
         card.classList.remove('has-word');
-        card.innerHTML = '<div class="word-placeholder">👇 点击下方按钮</div>';
+        card.innerHTML = '<div class="word-placeholder">点击下方按钮</div>';
         document.getElementById('communityVoteBlock').style.display = 'none';
       }
 
       function applyMode() {
         const isNo = mode === 'no';
         document.body.classList.toggle('no-mode', isNo);
+        document.documentElement.classList.toggle('dark', isNo);
+        document.documentElement.classList.toggle('light', !isNo);
 
         // Header
-        document.getElementById('headerEmoji').textContent = isNo ? '😈' : '👌';
         document.getElementById('headerBrand').textContent = isNo ? 'NO' : 'OK';
         document.getElementById('headerSub').textContent = isNo
           ? '拒绝，也是一门艺术'
@@ -1436,7 +651,7 @@
             if (autoCopy) {
               setTimeout(() => {
                 copyToClipboard(item.text).then((success) => {
-                  if (success) showToast('✓ 已复制到剪贴板');
+                  if (success) showToast('已复制到剪贴板');
                 });
               }, 100);
             }
@@ -1485,7 +700,7 @@
         if (autoCopy) {
           setTimeout(() => {
             copyToClipboard(word).then((success) => {
-              if (success) showToast('✓ 已复制到剪贴板');
+              if (success) showToast('已复制到剪贴板');
             });
           }, 100);
         }
@@ -1499,7 +714,7 @@
         const word = event.currentTarget.dataset.word;
         setTimeout(() => {
           copyToClipboard(word).then((success) => {
-            if (success) showToast('✓ 已复制到剪贴板');
+            if (success) showToast('已复制到剪贴板');
           });
         }, 100);
       }
@@ -1696,11 +911,11 @@
           autoCopy = document.getElementById('autoCopyToggle').checked;
 
           persistAll();
-          showToast('✓ 已保存');
+          showToast('已保存');
         },
 
         reset() {
-          const modeLabel = this.dialogMode === 'ok' ? 'OK' : '😈';
+          const modeLabel = this.dialogMode === 'ok' ? 'OK' : 'NO';
           if (
             !confirm(
               '确定恢复' + modeLabel + '模式的默认词库？编辑的内容将被覆盖。',
@@ -1716,7 +931,7 @@
             this.cache.no.colleague = DEFAULT_NO_COLLEAGUE.join('\n');
           }
           this.applyDialogMode();
-          showToast('✓ 已恢复默认词库');
+          showToast('已恢复默认词库');
         },
 
         onMixRateSlider(val) {
