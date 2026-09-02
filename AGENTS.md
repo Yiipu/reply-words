@@ -56,3 +56,12 @@ Workflows 中 `REPO_ID` / `CATEGORY_ID` 由运行时 GraphQL 动态获取。
 | ------------ | ------------------------------------------------------------------------------- |
 | `GIST_TOKEN` | Fine-grained PAT，需 Gist 读写权限。`submit.yml` / `fade-out.yml` 用此 token 访问社区词库 Gist |
 
+## 提交约束
+
+Agent 在执行 `git add` / `git commit` 时，**必须手动过滤掉以下 Trae 临时产物**，不得将其纳入版本控制：
+
+- `.trae-*` 目录（如 `.trae-html-share-packages/`）
+- 任何由 Trae IDE 运行时自动生成的 zip / 缓存文件
+
+推荐做法：提交前先 `git status` 确认变更列表，`git add` 时对具体文件路径而非目录使用通配符，或在 `git add .` 后用 `git reset HEAD <path>` 把临时文件从暂存区移除。
+
