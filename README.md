@@ -1,6 +1,6 @@
 ## 页面截图
 
-| 👌 模式 | 😈 模式 | 随机词条 | 设置 | 社区词条 |
+| OK 模式 | NO 模式 | 随机词条 | 设置 | 社区词条 |
 |---|---|---|---|---|
 | ![OK 模式](screenshots/screenshot-ok.png) | ![NO 模式](screenshots/screenshot-no.png) | ![随机词条](screenshots/screenshot-word.png) | ![设置](screenshots/screenshot-settings.png) | ![社区词条](screenshots/screenshot-community.png) |
 
