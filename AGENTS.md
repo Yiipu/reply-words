@@ -5,24 +5,29 @@
 ## 运行与部署
 
 - 本地开发：直接用浏览器打开 `index.html`，或 `python3 -m http.server <port>`
+
 - 无构建步骤、无依赖（纯静态 HTML）
-- 部署：`deploy.yml`（仅 `index.html` 变更时触发 + `workflow_dispatch` 手动）→ GitHub Pages（Source 设为 "GitHub Actions"）→ https://yiipu.github.io/reply-words/
+
+- 部署：`deploy.yml`（仅 `index.html` 变更时触发 + `workflow_dispatch` 手动）→ GitHub Pages（Source 设为 "GitHub Actions"）→ <https://yiipu.github.io/reply-words/>
 
 ## 架构
 
 单页应用，全部内联在 `index.html`（CSS + JS 均不分离）。数据分三层：
 
-| 层 | 存储位置 | 读写方式 |
-|---|---|---|
-| 默认词库 | `index.html` 内 JS 常量 `DEFAULT_*` | 硬编码，只读 |
-| 个人词库 | `localStorage`（key: `reply-words-data-v2`） | 前端编辑弹窗读写 |
-| 社区词库 | Gist `community.json` | GitHub Actions 写入，前端 `fetch()` 读取 |
+| 层    | 存储位置                                       | 读写方式                              |
+| ---- | ------------------------------------------ | --------------------------------- |
+| 默认词库 | `index.html` 内 JS 常量 `DEFAULT_*`           | 硬编码，只读                            |
+| 个人词库 | `localStorage`（key: `reply-words-data-v2`） | 前端编辑弹窗读写                          |
+| 社区词库 | Gist `community.json`                      | GitHub Actions 写入，前端 `fetch()` 读取 |
 
 ## 概念
 
 - **模式**（mode）：`ok`（OK 模式，浅色主题） / `no`（NO 模式，暗色主题）
+
 - **类别**（category）：`leader`（对领导，深绿按钮） / `colleague`（对同事，浅绿按钮）
+
 - 词条选取逻辑：避开最近 5 条历史，随机抽取；社区词以可配置概率（默认 20%）混入
+
 - 社区词展示时懒加载 giscus 组件，按 Discussion `number` 映射到对应投票
 
 ## 数据流（社区词生命周期）
@@ -34,15 +39,20 @@
 ## 硬编码常量（改仓库名/账号时需同步）
 
 分布在 `index.html`、`.github/workflows/*.yml` 中：
+
 - repo: `Yiipu/reply-words`
+
 - repositoryId: `R_kgDOTg3sHQ`
+
 - Discussion category: `Announcements` / `DIC_kwDOTg3sHc4DBxyQ`
+
 - Gist ID: `fb0670351105898b40e2d23a0dae3cd7`
 
 Workflows 中 `REPO_ID` / `CATEGORY_ID` 由运行时 GraphQL 动态获取。
 
 ## Secrets
 
-| Secret | 用途 |
-|---|---|
+| Secret       | 用途                                                                              |
+| ------------ | ------------------------------------------------------------------------------- |
 | `GIST_TOKEN` | Fine-grained PAT，需 Gist 读写权限。`submit.yml` / `fade-out.yml` 用此 token 访问社区词库 Gist |
+
